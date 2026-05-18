@@ -62,10 +62,17 @@
 
         /* Map styling overrides */
         #copernicus-map {
-            height: 520px;
+            height: 40vh; /* Shorter responsive height for mobile */
+            min-height: 320px;
             width: 100%;
             border-radius: 12px;
             z-index: 10;
+        }
+
+        @media (min-width: 1024px) {
+            #copernicus-map {
+                height: 520px; /* Restored larger desktop height */
+            }
         }
 
         /* Smooth scrolling */
@@ -103,6 +110,21 @@
     </nav>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-16">
+
+        <!-- Global Disclaimer Banner -->
+        <div class="bg-amber-50 border border-amber-200 border-l-4 border-l-amber-500 p-4 rounded-r-xl shadow-sm mb-8 -mt-4">
+            <div class="flex items-start">
+                <div class="flex-shrink-0 mt-0.5">
+                    <span class="text-amber-500 text-lg">&#9888;</span>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-bold text-amber-900">Navigation Disclaimer</h3>
+                    <div class="mt-1 text-sm text-amber-800 leading-relaxed">
+                        <p>The interactive maps, simulated vector fields, and routing data provided on this site are for demonstration and strategic planning purposes only. They do not replace official marine forecasts. <strong>Always double-check other authoritative sources before making navigational decisions. Use at your own risk.</strong></p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Section 1: Core Answers -->
         <section id="core-answers" class="scroll-mt-20">
@@ -144,11 +166,11 @@
 
         <!-- Section: Copernicus Live Tactical Map -->
         <section id="tactical-map" class="scroll-mt-20">
-            <div class="bg-white rounded-2xl shadow-sm border border-sand-200 p-6 md:p-8">
+            <div class="bg-white rounded-2xl shadow-sm border border-sand-200 p-4 md:p-8">
                 <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
                     <div>
-                        <h2 class="text-3xl font-bold text-marine-900">Simulated Surface Currents & Tide Map</h2>
-                        <p class="text-sm text-slate-500 mt-1">Mathematical demonstration of the combined vectors. Drop the GPS pin to calculate numerical readouts.</p>
+                        <h2 class="text-2xl md:text-3xl font-bold text-marine-900">Simulated Surface Currents & Tide Map</h2>
+                        <p class="text-sm text-slate-500 mt-1">Mathematical demonstration of combined vectors. Use the pin and timeline below.</p>
                     </div>
                     <!-- GPS Controls -->
                     <div class="flex flex-wrap items-center gap-3">
@@ -158,25 +180,99 @@
                     </div>
                 </div>
 
-                <!-- Map Interface & Controls Grid -->
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Map Interface & Controls Grid (Mobile Optimized Layout) -->
+                <div class="flex flex-col lg:flex-row gap-6">
                     
-                    <!-- Left Sidebar Controls & Real-time Readouts -->
-                    <div class="lg:col-span-4 flex flex-col justify-between bg-sand-50 p-5 rounded-xl border border-sand-200 space-y-6">
+                    <!-- Primary Interactive Column: Time -> Map -> Readouts -->
+                    <!-- Mobile: Order 1 (Top). Desktop: Order 2 (Right) -->
+                    <div class="w-full lg:w-2/3 flex flex-col space-y-4 order-1 lg:order-2">
+                        
+                        <!-- 1. Dynamic Time Forecasting Panel -->
+                        <div class="bg-white border border-sand-200 rounded-xl p-4 shadow-sm space-y-4">
+                            <!-- Top Row: Title and Datetime Picker -->
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div>
+                                    <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Time of Prediction</span>
+                                </div>
+                                <div class="flex items-center gap-2 w-full sm:w-auto">
+                                    <input type="datetime-local" id="exact-datetime" 
+                                           class="flex-1 sm:flex-none bg-sand-50 border border-sand-200 text-marine-900 font-bold px-2 py-1.5 rounded-lg text-sm focus:outline-none focus:border-marine-800"
+                                           onchange="syncTimeFromInput()">
+                                    <button onclick="resetTimeNow()" class="bg-marine-100 hover:bg-marine-200 text-marine-950 font-bold px-3 py-1.5 rounded-lg text-[11px] transition-colors whitespace-nowrap">
+                                        Reset to Now
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Bottom Row: Sliders and Steppers -->
+                            <div class="flex flex-row items-center gap-3">
+                                <!-- -1h / +1h Steppers -->
+                                <div class="flex items-center gap-1 shrink-0">
+                                    <button onclick="stepTime(-1)" class="bg-sand-100 hover:bg-sand-200 border border-sand-200 text-slate-700 font-bold px-2 py-1.5 rounded-lg text-xs transition-colors shadow-sm">
+                                        -1h
+                                    </button>
+                                    <button onclick="stepTime(1)" class="bg-sand-100 hover:bg-sand-200 border border-sand-200 text-slate-700 font-bold px-2 py-1.5 rounded-lg text-xs transition-colors shadow-sm">
+                                        +1h
+                                    </button>
+                                </div>
+                                
+                                <!-- Exact Time Slider -->
+                                <div class="flex-1 flex items-center gap-2">
+                                    <input type="range" id="hour-slider" min="0" max="23" value="12" class="w-full accent-marine-900 h-2 bg-sand-200 rounded-lg appearance-none cursor-pointer" oninput="syncTimeFromSlider(this.value)">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Leaflet Canvas Map -->
+                        <div class="relative bg-sand-100 rounded-xl overflow-hidden border border-sand-200 shadow-inner">
+                            <div id="copernicus-map"></div>
+                        </div>
+
+                        <!-- 3. Combined Compact Readouts Panel -->
+                        <div class="bg-white border-2 border-marine-100 rounded-xl p-3 sm:p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3 relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-full h-1 bg-marine-500"></div>
+                            
+                            <!-- Location Readout -->
+                            <div class="w-full sm:w-1/2 text-center sm:text-left border-b sm:border-b-0 sm:border-r border-sand-100 pb-2 sm:pb-0 sm:pr-4">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Pin Location</span>
+                                <span class="text-[13px] font-mono font-bold text-marine-900 bg-sand-50 border border-sand-200 rounded px-2 py-1 inline-block" id="lbl-ddm-coords">25° 07.8000' N, 121° 44.4000' E</span>
+                            </div>
+
+                            <!-- Vector Readout -->
+                            <div class="w-full sm:w-1/2 text-center sm:text-right">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Resultant Vector</span>
+                                <div class="flex items-end justify-center sm:justify-end gap-1 mb-1">
+                                    <span class="text-3xl font-extrabold text-marine-900 leading-none" id="live-vector-speed">1.8</span> 
+                                    <span class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-0.5">kts</span>
+                                    <span id="live-vector-dir" class="text-sm font-bold text-marine-800 bg-marine-50 px-2 py-0.5 rounded ml-2">045°</span>
+                                </div>
+                                <div class="text-[10px] text-slate-500 flex justify-center sm:justify-end gap-2">
+                                    <span>Base: <span id="live-base-comp" class="font-bold">0.8 kts</span></span>
+                                    <span>|</span>
+                                    <span>Tide: <span id="live-tide-comp" class="font-bold">1.1 kts</span></span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Secondary Controls Column: Manual DDM Inputs -->
+                    <!-- Mobile: Order 2 (Bottom). Desktop: Order 1 (Left) -->
+                    <div class="w-full lg:w-1/3 flex flex-col justify-between bg-sand-50 p-5 rounded-xl border border-sand-200 space-y-6 order-2 lg:order-1">
                         <div>
-                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-3">Target Location (Maritime DDM)</span>
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-3">Manual Location Input (DDM)</span>
                             
                             <!-- Latitude DDM Inputs -->
                             <div class="space-y-2 mb-4 bg-white p-3 rounded-lg border border-sand-200">
-                                <label class="block text-xs font-bold text-marine-900">Latitude (DDM)</label>
+                                <label class="block text-[11px] font-bold text-marine-900">Latitude</label>
                                 <div class="grid grid-cols-3 gap-1">
-                                    <div class="flex items-center bg-sand-50 rounded px-1.5 border border-sand-200">
+                                    <div class="flex items-center bg-sand-50 rounded px-1 border border-sand-200">
                                         <input type="number" id="gps-lat-deg" min="0" max="90" class="w-full bg-transparent text-xs text-center font-mono font-bold focus:outline-none" value="25">
-                                        <span class="text-xs font-mono ml-0.5">°</span>
+                                        <span class="text-xs font-mono">°</span>
                                     </div>
-                                    <div class="flex items-center bg-sand-50 rounded px-1.5 border border-sand-200">
+                                    <div class="flex items-center bg-sand-50 rounded px-1 border border-sand-200">
                                         <input type="number" id="gps-lat-min" min="0" max="59.9999" step="0.0001" class="w-full bg-transparent text-xs text-center font-mono font-bold focus:outline-none" value="07.8000">
-                                        <span class="text-xs font-mono ml-0.5">'</span>
+                                        <span class="text-xs font-mono">'</span>
                                     </div>
                                     <select id="gps-lat-dir" class="bg-sand-50 rounded text-xs font-bold text-center border border-sand-200 p-1">
                                         <option value="N" selected>N</option>
@@ -187,15 +283,15 @@
 
                             <!-- Longitude DDM Inputs -->
                             <div class="space-y-2 mb-4 bg-white p-3 rounded-lg border border-sand-200">
-                                <label class="block text-xs font-bold text-marine-900">Longitude (DDM)</label>
+                                <label class="block text-[11px] font-bold text-marine-900">Longitude</label>
                                 <div class="grid grid-cols-3 gap-1">
-                                    <div class="flex items-center bg-sand-50 rounded px-1.5 border border-sand-200">
+                                    <div class="flex items-center bg-sand-50 rounded px-1 border border-sand-200">
                                         <input type="number" id="gps-lng-deg" min="0" max="180" class="w-full bg-transparent text-xs text-center font-mono font-bold focus:outline-none" value="121">
-                                        <span class="text-xs font-mono ml-0.5">°</span>
+                                        <span class="text-xs font-mono">°</span>
                                     </div>
-                                    <div class="flex items-center bg-sand-50 rounded px-1.5 border border-sand-200">
+                                    <div class="flex items-center bg-sand-50 rounded px-1 border border-sand-200">
                                         <input type="number" id="gps-lng-min" min="0" max="59.9999" step="0.0001" class="w-full bg-transparent text-xs text-center font-mono font-bold focus:outline-none" value="44.4000">
-                                        <span class="text-xs font-mono ml-0.5">'</span>
+                                        <span class="text-xs font-mono">'</span>
                                     </div>
                                     <select id="gps-lng-dir" class="bg-sand-50 rounded text-xs font-bold text-center border border-sand-200 p-1">
                                         <option value="E" selected>E</option>
@@ -204,103 +300,19 @@
                                 </div>
                             </div>
 
-                            <button onclick="updateMapFromDDMInputs()" class="w-full bg-marine-800 hover:bg-marine-900 text-white font-bold py-2 rounded-lg text-xs transition-all shadow-sm">
+                            <button onclick="updateMapFromDDMInputs()" class="w-full bg-marine-800 hover:bg-marine-900 text-white font-bold py-2.5 rounded-lg text-xs transition-all shadow-sm">
                                 Move Pin to Coordinates
                             </button>
-
-                            <hr class="my-5 border-sand-200">
-
-                            <!-- Coordinates String Readout -->
-                            <div class="mt-2 space-y-1">
-                                <p class="text-xs text-slate-500 font-bold uppercase">Reading For Pin Location:</p>
-                                <p class="text-sm font-mono font-bold text-marine-900 bg-white border border-sand-200 rounded px-2 py-1 inline-block" id="lbl-ddm-coords">25° 07.8000' N, 121° 44.4000' E</p>
-                            </div>
-
-                            <!-- Calculated Resultant Dynamic Current Vector at Point -->
-                            <div class="mt-4 bg-white border-2 border-marine-100 rounded-xl p-4 shadow-sm text-center relative overflow-hidden">
-                                <div class="absolute top-0 left-0 w-full h-1 bg-marine-500"></div>
-                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Resultant Vector At Pin</span>
-                                <div class="text-4xl font-extrabold text-marine-900"><span id="live-vector-speed">1.8</span> <span class="text-base font-medium text-slate-500">knots</span></div>
-                                <div class="text-xs font-semibold text-slate-500 mt-1 uppercase tracking-wide">Flowing Towards: <span id="live-vector-dir" class="text-marine-800 font-bold bg-marine-50 px-2 py-0.5 rounded">045° (NE)</span></div>
-                                
-                                <div class="mt-4 flex justify-around items-center text-[11px] text-slate-500 border-t border-sand-100 pt-3">
-                                    <div>
-                                        <span class="block text-slate-400">Ocean Current Base</span>
-                                        <span id="live-base-comp" class="font-bold text-sky-600">0.8 kts</span>
-                                    </div>
-                                    <div class="border-l border-sand-200 h-6"></div>
-                                    <div>
-                                        <span class="block text-slate-400">Tidal Influence</span>
-                                        <span id="live-tide-comp" class="font-bold text-amber-600">+1.1 kts (Flood)</span>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
 
                         <!-- Zoom Controls Panel -->
                         <div class="pt-4 border-t border-sand-200 mt-4">
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-2 text-center">Map Zoom Controls</span>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-2 text-center">Map Zoom</span>
                             <div class="flex gap-2">
                                 <button onclick="mapZoomOut()" class="flex-1 bg-white hover:bg-sand-100 text-marine-900 font-bold py-2 rounded-xl border border-sand-200 shadow-sm transition-all text-lg flex items-center justify-center">-</button>
                                 <button onclick="mapZoomIn()" class="flex-1 bg-white hover:bg-sand-100 text-marine-900 font-bold py-2 rounded-xl border border-sand-200 shadow-sm transition-all text-lg flex items-center justify-center">+</button>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Map & Predictive Timeline Controls -->
-                    <div class="lg:col-span-8 flex flex-col space-y-4">
-                        
-                        <!-- Leaflet Canvas Map -->
-                        <div class="relative bg-sand-100 rounded-xl overflow-hidden border border-sand-200 shadow-inner">
-                            <div id="copernicus-map"></div>
-                            <!-- Scale Indicator Overlay -->
-                            <div class="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm border border-sand-200 rounded-lg px-3 py-1.5 text-[11px] font-bold text-marine-900 z-[400] shadow-sm pointer-events-none">
-                                Simulated Physical Overlay (Landmasked Vector Field)
-                            </div>
-                        </div>
-
-                        <!-- Dynamic Time Forecasting Panel -->
-                        <div class="bg-white border border-sand-200 rounded-xl p-5 shadow-sm space-y-5">
-                            
-                            <!-- Top Row: Title and Datetime Picker -->
-                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                <div>
-                                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Time of Prediction</span>
-                                    <p class="text-[11px] text-slate-500 mt-0.5">Select a specific date and time to calculate tidal influence.</p>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <input type="datetime-local" id="exact-datetime" 
-                                           class="bg-sand-50 border border-sand-200 text-marine-900 font-bold px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-marine-800"
-                                           onchange="syncTimeFromInput()">
-                                    <button onclick="resetTimeNow()" class="bg-marine-100 hover:bg-marine-200 text-marine-950 font-bold px-3 py-2 rounded-lg text-xs transition-colors">
-                                        Reset to Start
-                                    </button>
-                                </div>
-                            </div>
-
-                            <hr class="border-sand-100">
-
-                            <!-- Bottom Row: Sliders and Steppers -->
-                            <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-                                <!-- -1h / +1h Steppers -->
-                                <div class="flex items-center gap-2 shrink-0">
-                                    <button onclick="stepTime(-1)" class="bg-sand-100 hover:bg-sand-200 border border-sand-200 text-slate-700 font-bold px-3 py-2 rounded-lg text-xs transition-colors flex items-center gap-1 shadow-sm">
-                                        <span>◀</span> <span>-1h</span>
-                                    </button>
-                                    <button onclick="stepTime(1)" class="bg-sand-100 hover:bg-sand-200 border border-sand-200 text-slate-700 font-bold px-3 py-2 rounded-lg text-xs transition-colors flex items-center gap-1 shadow-sm">
-                                        <span>+1h</span> <span>▶</span>
-                                    </button>
-                                </div>
-                                
-                                <!-- Exact Time Slider for the Current Day -->
-                                <div class="flex-1 flex items-center gap-3 w-full">
-                                    <span class="text-[10px] font-bold text-slate-400 uppercase w-10 text-right">00:00</span>
-                                    <input type="range" id="hour-slider" min="0" max="23" value="12" class="flex-1 accent-marine-900 h-2 bg-sand-200 rounded-lg appearance-none cursor-pointer" oninput="syncTimeFromSlider(this.value)">
-                                    <span class="text-[10px] font-bold text-slate-400 uppercase w-10">23:00</span>
-                                </div>
-                            </div>
-                        </div>
-
                     </div>
                 </div>
             </div>
@@ -511,8 +523,11 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-marine-900 text-white py-8 mt-12 text-center text-sm">
-        <p>&copy; 2026 Navigation Briefing - Prepared for Taiwan Keelung & Miyako Cup Expedition.</p>
+    <footer class="bg-marine-900 text-white py-8 mt-12 text-center text-sm px-4">
+        <p class="mb-2">&copy; 2026 Navigation Briefing - Prepared for Taiwan Keelung & Miyako Cup Expedition.</p>
+        <p class="text-marine-200/80 text-xs max-w-3xl mx-auto mt-3">
+            <strong>Disclaimer:</strong> The interactive maps, simulated vector fields, and routing data provided on this site are for demonstration and strategic planning purposes only. They do not replace official marine forecasts or professional tactical routing software. <strong>Always double-check other authoritative sources before making navigational decisions. Use at your own risk.</strong>
+        </p>
     </footer>
 
     <!-- Application Logic -->
@@ -523,7 +538,7 @@
         let vectorFieldLayers;
         
         // Time state variables
-        let currentSimulationDate = new Date(2026, 4, 30, 12, 0); // May 30, 2026, 12:00
+        let currentSimulationDate = new Date(); // Initialize to exact current date and time
         const EPOCH_DATE = new Date(2026, 4, 30, 0, 0); // Baseline for tidal math
 
         // --- TIME SYNCHRONIZATION FUNCTIONS ---
@@ -566,9 +581,9 @@
             updateTimeUI();
         };
 
-        // Reset to initial baseline
+        // Reset to exact current time
         window.resetTimeNow = function() {
-            currentSimulationDate = new Date(2026, 4, 30, 12, 0);
+            currentSimulationDate = new Date();
             updateTimeUI();
         }
 
