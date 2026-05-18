@@ -62,7 +62,7 @@
 
         /* Map styling overrides */
         #copernicus-map {
-            height: 450px;
+            height: 520px;
             width: 100%;
             border-radius: 12px;
             z-index: 10;
@@ -83,6 +83,7 @@
 </head>
 <body class="bg-sand-50 text-slate-800 font-sans antialiased">
 
+    <!-- NAVIGATION BAR -->
     <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-sand-200 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
@@ -95,7 +96,7 @@
                     <a href="#regional-analysis" class="text-sm font-medium hover:text-marine-800 transition-colors">Regional Analysis</a>
                     <a href="#case-study" class="text-sm font-medium hover:text-marine-800 transition-colors">Race Case Study</a>
                     <a href="#references" class="text-sm font-medium hover:text-marine-800 transition-colors">References</a>
-                    <a href="#gem-navigator" class="text-sm font-bold text-marine-900 bg-marine-100 hover:bg-marine-200 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">✨ GEM Navigator</a>
+                    <a href="#gemini-gems" class="text-sm font-bold text-marine-900 bg-marine-100 hover:bg-marine-200 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">✨ GEMS</a>
                 </div>
             </div>
         </div>
@@ -146,67 +147,160 @@
             <div class="bg-white rounded-2xl shadow-sm border border-sand-200 p-6 md:p-8">
                 <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
                     <div>
-                        <h2 class="text-3xl font-bold text-marine-900">Copernicus Live Current Mapping</h2>
-                        <p class="text-sm text-slate-500 mt-1">Simulated high-resolution physical oceanography models mapped over dynamic coordinate overlays.</p>
+                        <h2 class="text-3xl font-bold text-marine-900">Simulated Surface Currents & Tide Map</h2>
+                        <p class="text-sm text-slate-500 mt-1">Mathematical demonstration of the combined vectors. Drop the GPS pin to calculate numerical readouts.</p>
                     </div>
-                    <!-- GPS / Input Controllers -->
+                    <!-- GPS Controls -->
                     <div class="flex flex-wrap items-center gap-3">
                         <button onclick="requestDeviceLocation()" class="bg-marine-900 hover:bg-marine-800 text-white font-medium px-4 py-2 rounded-xl text-xs transition-colors flex items-center gap-2 shadow-sm">
                             <span>🛰️ Use My GPS</span>
                         </button>
-                        <div class="flex items-center gap-2 bg-sand-100 p-1.5 rounded-xl border border-sand-200">
-                            <input type="number" id="gps-lat" step="0.0001" placeholder="Lat" class="w-20 px-2 py-1 bg-white border border-sand-200 rounded-lg text-xs font-semibold text-marine-900 focus:outline-none focus:ring-1 focus:ring-marine-800" value="25.1300">
-                            <input type="number" id="gps-lng" step="0.0001" placeholder="Lng" class="w-20 px-2 py-1 bg-white border border-sand-200 rounded-lg text-xs font-semibold text-marine-900 focus:outline-none focus:ring-1 focus:ring-marine-800" value="121.7400">
-                            <button onclick="updateMapFromInputs()" class="bg-marine-800 hover:bg-marine-900 text-white font-bold px-3 py-1 rounded-lg text-xs transition-all">Go</button>
-                        </div>
                     </div>
                 </div>
 
                 <!-- Map Interface & Controls Grid -->
-                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                    <!-- Sidebar Controls & Real-time Readouts -->
-                    <div class="lg:col-span-1 flex flex-col justify-between bg-sand-50 p-5 rounded-xl border border-sand-200">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    
+                    <!-- Left Sidebar Controls & Real-time Readouts -->
+                    <div class="lg:col-span-4 flex flex-col justify-between bg-sand-50 p-5 rounded-xl border border-sand-200 space-y-6">
                         <div>
-                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Location Readout</span>
-                            <div class="mt-2 space-y-1.5">
-                                <p class="text-sm text-slate-700"><strong>Target Area:</strong> <span id="current-area-lbl" class="text-marine-900 font-semibold">Keelung Outer Harbour</span></p>
-                                <p class="text-xs text-slate-500">Lat: <span id="lbl-lat" class="font-mono">25.1300° N</span></p>
-                                <p class="text-xs text-slate-500">Lon: <span id="lbl-lng" class="font-mono">121.7400° E</span></p>
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-3">Target Location (Maritime DDM)</span>
+                            
+                            <!-- Latitude DDM Inputs -->
+                            <div class="space-y-2 mb-4 bg-white p-3 rounded-lg border border-sand-200">
+                                <label class="block text-xs font-bold text-marine-900">Latitude (DDM)</label>
+                                <div class="grid grid-cols-3 gap-1">
+                                    <div class="flex items-center bg-sand-50 rounded px-1.5 border border-sand-200">
+                                        <input type="number" id="gps-lat-deg" min="0" max="90" class="w-full bg-transparent text-xs text-center font-mono font-bold focus:outline-none" value="25">
+                                        <span class="text-xs font-mono ml-0.5">°</span>
+                                    </div>
+                                    <div class="flex items-center bg-sand-50 rounded px-1.5 border border-sand-200">
+                                        <input type="number" id="gps-lat-min" min="0" max="59.9999" step="0.0001" class="w-full bg-transparent text-xs text-center font-mono font-bold focus:outline-none" value="07.8000">
+                                        <span class="text-xs font-mono ml-0.5">'</span>
+                                    </div>
+                                    <select id="gps-lat-dir" class="bg-sand-50 rounded text-xs font-bold text-center border border-sand-200 p-1">
+                                        <option value="N" selected>N</option>
+                                        <option value="S">S</option>
+                                    </select>
+                                </div>
                             </div>
 
-                            <hr class="my-4 border-sand-200">
+                            <!-- Longitude DDM Inputs -->
+                            <div class="space-y-2 mb-4 bg-white p-3 rounded-lg border border-sand-200">
+                                <label class="block text-xs font-bold text-marine-900">Longitude (DDM)</label>
+                                <div class="grid grid-cols-3 gap-1">
+                                    <div class="flex items-center bg-sand-50 rounded px-1.5 border border-sand-200">
+                                        <input type="number" id="gps-lng-deg" min="0" max="180" class="w-full bg-transparent text-xs text-center font-mono font-bold focus:outline-none" value="121">
+                                        <span class="text-xs font-mono ml-0.5">°</span>
+                                    </div>
+                                    <div class="flex items-center bg-sand-50 rounded px-1.5 border border-sand-200">
+                                        <input type="number" id="gps-lng-min" min="0" max="59.9999" step="0.0001" class="w-full bg-transparent text-xs text-center font-mono font-bold focus:outline-none" value="44.4000">
+                                        <span class="text-xs font-mono ml-0.5">'</span>
+                                    </div>
+                                    <select id="gps-lng-dir" class="bg-sand-50 rounded text-xs font-bold text-center border border-sand-200 p-1">
+                                        <option value="E" selected>E</option>
+                                        <option value="W">W</option>
+                                    </select>
+                                </div>
+                            </div>
 
-                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Calculated Vector (Copernicus)</span>
-                            <div class="mt-3 bg-white border border-sand-200 rounded-xl p-4 shadow-sm text-center">
-                                <div class="text-3xl font-extrabold text-marine-900"><span id="live-vector-speed">1.8</span> <span class="text-base font-medium text-slate-500">kts</span></div>
-                                <div class="text-xs font-semibold text-slate-400 mt-1 uppercase tracking-wide">Direction: <span id="live-vector-dir" class="text-marine-800 font-bold">045° (NE)</span></div>
+                            <button onclick="updateMapFromDDMInputs()" class="w-full bg-marine-800 hover:bg-marine-900 text-white font-bold py-2 rounded-lg text-xs transition-all shadow-sm">
+                                Move Pin to Coordinates
+                            </button>
+
+                            <hr class="my-5 border-sand-200">
+
+                            <!-- Coordinates String Readout -->
+                            <div class="mt-2 space-y-1">
+                                <p class="text-xs text-slate-500 font-bold uppercase">Reading For Pin Location:</p>
+                                <p class="text-sm font-mono font-bold text-marine-900 bg-white border border-sand-200 rounded px-2 py-1 inline-block" id="lbl-ddm-coords">25° 07.8000' N, 121° 44.4000' E</p>
+                            </div>
+
+                            <!-- Calculated Resultant Dynamic Current Vector at Point -->
+                            <div class="mt-4 bg-white border-2 border-marine-100 rounded-xl p-4 shadow-sm text-center relative overflow-hidden">
+                                <div class="absolute top-0 left-0 w-full h-1 bg-marine-500"></div>
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Resultant Vector At Pin</span>
+                                <div class="text-4xl font-extrabold text-marine-900"><span id="live-vector-speed">1.8</span> <span class="text-base font-medium text-slate-500">knots</span></div>
+                                <div class="text-xs font-semibold text-slate-500 mt-1 uppercase tracking-wide">Flowing Towards: <span id="live-vector-dir" class="text-marine-800 font-bold bg-marine-50 px-2 py-0.5 rounded">045° (NE)</span></div>
                                 
-                                <div class="mt-3 inline-flex items-center justify-center w-12 h-12 bg-marine-50 rounded-full border border-marine-100">
-                                    <svg id="live-vector-arrow" class="w-6 h-6 text-marine-800 transition-transform duration-300" style="transform: rotate(45deg);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
-                                    </svg>
+                                <div class="mt-4 flex justify-around items-center text-[11px] text-slate-500 border-t border-sand-100 pt-3">
+                                    <div>
+                                        <span class="block text-slate-400">Ocean Current Base</span>
+                                        <span id="live-base-comp" class="font-bold text-sky-600">0.8 kts</span>
+                                    </div>
+                                    <div class="border-l border-sand-200 h-6"></div>
+                                    <div>
+                                        <span class="block text-slate-400">Tidal Influence</span>
+                                        <span id="live-tide-comp" class="font-bold text-amber-600">+1.1 kts (Flood)</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Zoom Controls Panel -->
-                        <div class="mt-6 pt-4 border-t border-sand-200">
-                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">Tactical Zoom</span>
+                        <div class="pt-4 border-t border-sand-200 mt-4">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-2 text-center">Map Zoom Controls</span>
                             <div class="flex gap-2">
-                                <button onclick="mapZoomIn()" class="flex-1 bg-white hover:bg-sand-100 text-marine-900 font-bold py-2.5 rounded-xl border border-sand-200 shadow-sm transition-all text-lg flex items-center justify-center">+</button>
-                                <button onclick="mapZoomOut()" class="flex-1 bg-white hover:bg-sand-100 text-marine-900 font-bold py-2.5 rounded-xl border border-sand-200 shadow-sm transition-all text-lg flex items-center justify-center">-</button>
+                                <button onclick="mapZoomOut()" class="flex-1 bg-white hover:bg-sand-100 text-marine-900 font-bold py-2 rounded-xl border border-sand-200 shadow-sm transition-all text-lg flex items-center justify-center">-</button>
+                                <button onclick="mapZoomIn()" class="flex-1 bg-white hover:bg-sand-100 text-marine-900 font-bold py-2 rounded-xl border border-sand-200 shadow-sm transition-all text-lg flex items-center justify-center">+</button>
                             </div>
-                            <span class="text-[10px] text-slate-400 mt-2 block text-center">Standard oceanographic grid resolution 1/12°</span>
                         </div>
                     </div>
 
-                    <!-- Map Display Canvas -->
-                    <div class="lg:col-span-3 relative bg-sand-100 rounded-xl overflow-hidden border border-sand-200 shadow-inner">
-                        <div id="copernicus-map"></div>
-                        <!-- Scale Indicator Overlay -->
-                        <div class="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm border border-sand-200 rounded-lg px-3 py-1 text-[11px] font-bold text-marine-900 z-[400] shadow-sm pointer-events-none">
-                            Copernicus Physics Layer Active (PHY-001-024)
+                    <!-- Map & Predictive Timeline Controls -->
+                    <div class="lg:col-span-8 flex flex-col space-y-4">
+                        
+                        <!-- Leaflet Canvas Map -->
+                        <div class="relative bg-sand-100 rounded-xl overflow-hidden border border-sand-200 shadow-inner">
+                            <div id="copernicus-map"></div>
+                            <!-- Scale Indicator Overlay -->
+                            <div class="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm border border-sand-200 rounded-lg px-3 py-1.5 text-[11px] font-bold text-marine-900 z-[400] shadow-sm pointer-events-none">
+                                Simulated Physical Overlay (Landmasked Vector Field)
+                            </div>
                         </div>
+
+                        <!-- Dynamic Time Forecasting Panel -->
+                        <div class="bg-white border border-sand-200 rounded-xl p-5 shadow-sm space-y-5">
+                            
+                            <!-- Top Row: Title and Datetime Picker -->
+                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div>
+                                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Time of Prediction</span>
+                                    <p class="text-[11px] text-slate-500 mt-0.5">Select a specific date and time to calculate tidal influence.</p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <input type="datetime-local" id="exact-datetime" 
+                                           class="bg-sand-50 border border-sand-200 text-marine-900 font-bold px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-marine-800"
+                                           onchange="syncTimeFromInput()">
+                                    <button onclick="resetTimeNow()" class="bg-marine-100 hover:bg-marine-200 text-marine-950 font-bold px-3 py-2 rounded-lg text-xs transition-colors">
+                                        Reset to Start
+                                    </button>
+                                </div>
+                            </div>
+
+                            <hr class="border-sand-100">
+
+                            <!-- Bottom Row: Sliders and Steppers -->
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                                <!-- -1h / +1h Steppers -->
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <button onclick="stepTime(-1)" class="bg-sand-100 hover:bg-sand-200 border border-sand-200 text-slate-700 font-bold px-3 py-2 rounded-lg text-xs transition-colors flex items-center gap-1 shadow-sm">
+                                        <span>◀</span> <span>-1h</span>
+                                    </button>
+                                    <button onclick="stepTime(1)" class="bg-sand-100 hover:bg-sand-200 border border-sand-200 text-slate-700 font-bold px-3 py-2 rounded-lg text-xs transition-colors flex items-center gap-1 shadow-sm">
+                                        <span>+1h</span> <span>▶</span>
+                                    </button>
+                                </div>
+                                
+                                <!-- Exact Time Slider for the Current Day -->
+                                <div class="flex-1 flex items-center gap-3 w-full">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase w-10 text-right">00:00</span>
+                                    <input type="range" id="hour-slider" min="0" max="23" value="12" class="flex-1 accent-marine-900 h-2 bg-sand-200 rounded-lg appearance-none cursor-pointer" oninput="syncTimeFromSlider(this.value)">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase w-10">23:00</span>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -222,13 +316,13 @@
             <div class="bg-white rounded-2xl shadow-sm border border-sand-200 overflow-hidden">
                 <!-- Tabs -->
                 <div class="flex flex-wrap border-b border-sand-200 bg-sand-50" id="region-tabs">
-                    <button class="region-tab flex-1 py-4 px-6 text-center font-bold text-marine-900 border-b-2 border-marine-900 bg-white cursor-pointer" data-region="north">
+                    <button class="region-tab flex-1 py-4 px-6 text-center font-bold text-marine-900 border-b-2 border-marine-900 bg-white" data-region="north">
                         North Coast (Keelung)
                     </button>
-                    <button class="region-tab flex-1 py-4 px-6 text-center font-medium text-slate-500 hover:text-marine-800 border-b-2 border-transparent transition-colors cursor-pointer" data-region="west">
+                    <button class="region-tab flex-1 py-4 px-6 text-center font-medium text-slate-500 hover:text-marine-800 border-b-2 border-transparent transition-colors" data-region="west">
                         West Coast (Taiwan St.)
                     </button>
-                    <button class="region-tab flex-1 py-4 px-6 text-center font-medium text-slate-500 hover:text-marine-800 border-b-2 border-transparent transition-colors cursor-pointer" data-region="penghu">
+                    <button class="region-tab flex-1 py-4 px-6 text-center font-medium text-slate-500 hover:text-marine-800 border-b-2 border-transparent transition-colors" data-region="penghu">
                         Penghu Area
                     </button>
                 </div>
@@ -261,7 +355,7 @@
                         </div>
                     </div>
 
-                    <!-- Chart Canvas -->
+                    <!-- Chart -->
                     <div class="lg:col-span-2 flex flex-col justify-center">
                         <div class="mb-2 text-center text-sm text-slate-500 font-medium">
                             Simulated Combined Current Speed Vector (Knots) over 24 Hours
@@ -335,8 +429,9 @@
 
         <!-- Section 4: References -->
         <section id="references" class="scroll-mt-20">
-            <h2 class="text-2xl font-bold text-marine-900 mb-6">Authoritative Data Sources & References</h2>
+            <h2 class="text-3xl font-bold text-marine-900 mb-6">Authoritative Data Sources & References</h2>
             <div class="bg-white rounded-2xl shadow-sm border border-sand-200 p-6 md:p-8">
+                <p class="text-slate-600 mb-6">The mathematical vector model visualized in the map above is an offline, simplified <em>demonstration</em> of how ocean currents and tidal streams interact based on historical profiles. For actual race routing and live data downloads, please consult the authoritative operational forecasting centers below:</p>
                 <ul class="space-y-4 text-slate-600">
                     <li class="flex items-start">
                         <span class="text-marine-800 mr-3 text-xl">&#128279;</span>
@@ -363,82 +458,51 @@
             </div>
         </section>
 
-        <!-- Section 5: Dual GEM Navigators & Local Skipper AI -->
-        <section id="gem-navigator" class="scroll-mt-20 pb-12">
-            <h2 class="text-3xl font-bold text-marine-900 mb-4">Sailing & Local Cruising AI Assistants</h2>
-            <p class="text-lg text-slate-600 mb-6 max-w-4xl">
-                Need specialized routing assistance, weather forecasts, or local Taiwanese harbor secrets? Switch between our specialized AI officers to help guide your campaign.
-            </p>
-
-            <!-- Profile Selector Toggles -->
-            <div class="flex flex-wrap gap-3 mb-6">
-                <button id="toggle-navigator-btn" onclick="selectAssistant('navigator')" class="px-5 py-3 rounded-xl text-xs font-bold transition-all shadow-md bg-marine-900 text-white border border-marine-900 focus:outline-none">
-                    ✨ GEM Navigator - A+ (Tactical)
-                </button>
-                <button id="toggle-skipper-btn" onclick="selectAssistant('skipper')" class="px-5 py-3 rounded-xl text-xs font-medium transition-all shadow-sm bg-white text-slate-600 border border-sand-200 hover:bg-sand-100 flex items-center gap-1.5 focus:outline-none">
-                    🇹🇼 Taiwan Skipper GEM (Local Port Wisdom)
-                </button>
-            </div>
-
-            <div class="bg-white rounded-2xl shadow-lg border border-sand-200 overflow-hidden grid grid-cols-1 lg:grid-cols-12">
-                <!-- Chat Panel Sidebar -->
-                <div class="lg:col-span-4 bg-sand-100 p-6 border-r border-sand-200 flex flex-col justify-between">
-                    <div>
-                        <div class="flex items-center space-x-3 mb-6">
-                            <div id="sidebar-avatar" class="w-10 h-10 bg-marine-900 text-white rounded-xl flex items-center justify-center font-bold text-xl shadow-md transition-all">
-                                A+
-                            </div>
-                            <div>
-                                <h3 id="sidebar-title" class="font-bold text-marine-900 text-lg">Tactical Sailing Officer</h3>
-                                <p class="text-xs text-slate-500 flex items-center gap-1">
-                                    <span class="w-2 h-2 bg-emerald-500 rounded-full inline-block animate-pulse"></span> Online &amp; Ready
-                                </p>
-                            </div>
-                        </div>
-
-                        <p id="sidebar-desc" class="text-sm text-slate-600 mb-6 transition-all">
-                            Ask about currents, optimal wind angles, harbor approaches, or the Kuroshio crossing for your 2026 campaign.
-                        </p>
-
-                        <!-- Suggestion Prompts -->
-                        <div class="space-y-3">
-                            <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Suggested Enquiries</span>
-                            <div id="suggested-queries-container" class="space-y-2">
-                                <!-- Suggestions injected dynamically via Javascript -->
-                            </div>
-                            
-                            <!-- External Link Button (Shows only for Skipper) -->
-                            <div id="external-link-container" class="mt-4 pt-4 border-t border-sand-200 hidden">
-                                <a id="external-gem-link" href="https://gemini.google.com/gem/1USNBM0SPQIZCxG5w2co7EisvRgHHCecv?usp=sharing" target="_blank" class="w-full text-center text-xs bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold p-3 rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5">
-                                    🚀 Launch Original Skipper GEM ↗
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mt-8 pt-4 border-t border-sand-200">
-                        <span class="text-xs text-slate-400 block">Powered by Gemini 3.1 Flash. Always double check navigation charts before making critical decisions.</span>
-                    </div>
+        <!-- Section 5: Dual GEMS Information & External Launch Portal -->
+        <section id="gemini-gems" class="scroll-mt-20">
+            <div class="bg-white rounded-2xl shadow-sm border border-sand-200 p-8">
+                <div class="text-center max-w-3xl mx-auto mb-10">
+                    <h2 class="text-3xl font-extrabold text-marine-900 mb-3">Tactical Campaigns & Port Pilotage AI Assistants</h2>
+                    <p class="text-slate-600 text-lg">
+                        Accelerate your campaign with customized, deep-domain Google Gemini GEMS. Click through to open the external interactive intelligence nodes configured specifically for your calendar.
+                    </p>
                 </div>
 
-                <!-- Chat Box Main Interface -->
-                <div class="lg:col-span-8 flex flex-col h-[520px]">
-                    <!-- Chat Window Area -->
-                    <div id="chat-messages" class="flex-1 overflow-y-auto p-6 space-y-4 bg-sand-50/50">
-                        <!-- Bot Greeting Message -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- GEM 1: Tactical Routing -->
+                    <div class="bg-marine-50 border border-marine-100 rounded-2xl p-6 md:p-8 flex flex-col justify-between hover:shadow-md transition-shadow">
+                        <div>
+                            <div class="flex items-center gap-3 mb-4">
+                                <span class="text-3xl">✨</span>
+                                <h3 class="text-xl font-bold text-marine-900">GEM Navigator - A+</h3>
+                            </div>
+                            <span class="inline-block bg-marine-100 text-marine-900 text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full mb-4">Tactical Sailing Officer</span>
+                            <p class="text-slate-600 text-sm leading-relaxed mb-6">
+                                Configured to optimize offshore routing, evaluate cross-track Kuroshio drifting currents, and model local weather matrices. Ideal for navigators seeking wind and swell predictions, polar speed targets, and optimal departure windows.
+                            </p>
+                        </div>
+                        <a href="https://gemini.google.com" target="_blank" class="w-full text-center py-3 bg-marine-900 hover:bg-marine-800 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-2">
+                            <span>Launch GEM Navigator - A+</span>
+                            <span>↗</span>
+                        </a>
                     </div>
 
-                    <!-- Input Area -->
-                    <div class="p-4 border-t border-sand-200 bg-white">
-                        <form id="chat-form" onsubmit="handleQuerySubmit(event)" class="flex gap-2">
-                            <input type="text" id="chat-input" placeholder="Ask about routes, currents, tides or tactical recommendations..." class="flex-1 border border-sand-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-marine-800 focus:border-transparent" required>
-                            <button type="submit" id="chat-submit-btn" class="bg-marine-900 hover:bg-marine-800 text-white px-5 py-3 rounded-xl font-medium text-sm transition-all shadow-md flex items-center justify-center gap-2">
-                                <span>Send</span>
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                                </svg>
-                            </button>
-                        </form>
+                    <!-- GEM 2: Taiwan Skipper Port Wisdom -->
+                    <div class="bg-amber-50/50 border border-amber-100 rounded-2xl p-6 md:p-8 flex flex-col justify-between hover:shadow-md transition-shadow">
+                        <div>
+                            <div class="flex items-center gap-3 mb-4">
+                                <span class="text-3xl">🇹🇼</span>
+                                <h3 class="text-xl font-bold text-amber-950">Taiwan Skipper GEM</h3>
+                            </div>
+                            <span class="inline-block bg-amber-100 text-amber-900 text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full mb-4">Local Port Pilotage Wisdom</span>
+                            <p class="text-slate-600 text-sm leading-relaxed mb-6">
+                                A veteran cruising skipper packed with local harbor pilotage details, secure typhoon shelter anchorages across the Penghu archipelago, local coast guard boarding procedures, and streamlined customs (CIQS) processing steps.
+                            </p>
+                        </div>
+                        <a href="https://gemini.google.com/gem/1USNBM0SPQIZCxG5w2co7EisvRgHHCecv?usp=sharing" target="_blank" class="w-full text-center py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-2">
+                            <span>Launch Taiwan Skipper GEM</span>
+                            <span>↗</span>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -447,15 +511,382 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-marine-900 text-white py-8 text-center text-sm">
+    <footer class="bg-marine-900 text-white py-8 mt-12 text-center text-sm">
         <p>&copy; 2026 Navigation Briefing - Prepared for Taiwan Keelung & Miyako Cup Expedition.</p>
     </footer>
 
     <!-- Application Logic -->
     <script>
-        // --- DATA STORAGE ---
+        // --- TACTICAL MAP LOGIC ---
+        let map;
+        let mainMarker;
+        let vectorFieldLayers;
         
-        // Regional Analysis Data (Simulated 24h data in Knots)
+        // Time state variables
+        let currentSimulationDate = new Date(2026, 4, 30, 12, 0); // May 30, 2026, 12:00
+        const EPOCH_DATE = new Date(2026, 4, 30, 0, 0); // Baseline for tidal math
+
+        // --- TIME SYNCHRONIZATION FUNCTIONS ---
+
+        function formatToDatetimeLocal(date) {
+            const pad = (n) => n.toString().padStart(2, '0');
+            const year = date.getFullYear();
+            const month = pad(date.getMonth() + 1);
+            const day = pad(date.getDate());
+            const hours = pad(date.getHours());
+            const minutes = pad(date.getMinutes());
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        // Updates the UI elements based on currentSimulationDate state
+        function updateTimeUI() {
+            document.getElementById('exact-datetime').value = formatToDatetimeLocal(currentSimulationDate);
+            document.getElementById('hour-slider').value = currentSimulationDate.getHours();
+            updateHydrodynamics();
+        }
+
+        // Called when the Datetime Input box is changed by the user
+        window.syncTimeFromInput = function() {
+            const inputVal = document.getElementById('exact-datetime').value;
+            if (inputVal) {
+                currentSimulationDate = new Date(inputVal);
+                updateTimeUI(); 
+            }
+        };
+
+        // Called when the slider is moved (modifies only the hour of the current day)
+        window.syncTimeFromSlider = function(hour) {
+            currentSimulationDate.setHours(parseInt(hour));
+            updateTimeUI();
+        };
+
+        // Called by +/- 1h buttons
+        window.stepTime = function(hours) {
+            currentSimulationDate.setHours(currentSimulationDate.getHours() + hours);
+            updateTimeUI();
+        };
+
+        // Reset to initial baseline
+        window.resetTimeNow = function() {
+            currentSimulationDate = new Date(2026, 4, 30, 12, 0);
+            updateTimeUI();
+        }
+
+        // --- COORDINATE CONVERSION (DDM) ---
+        function ddToDdm(val, isLat) {
+            const absolute = Math.abs(val);
+            const degrees = Math.floor(absolute);
+            const minutes = ((absolute - degrees) * 60);
+            const hemisphere = isLat ? (val >= 0 ? 'N' : 'S') : (val >= 0 ? 'E' : 'W');
+            return {
+                deg: degrees,
+                min: parseFloat(minutes.toFixed(4)),
+                dir: hemisphere,
+                formatted: `${degrees}° ${minutes.toFixed(4)}' ${hemisphere}`
+            };
+        }
+
+        function ddmToDd(deg, min, dir) {
+            let val = Math.abs(deg) + (Math.abs(min) / 60);
+            if (dir === 'S' || dir === 'W') val = -val;
+            return val;
+        }
+
+        function updateDdmInputFields(lat, lng) {
+            const latObj = ddToDdm(lat, true);
+            const lngObj = ddToDdm(lng, false);
+
+            document.getElementById('gps-lat-deg').value = latObj.deg;
+            document.getElementById('gps-lat-min').value = latObj.min.toFixed(4);
+            document.getElementById('gps-lat-dir').value = latObj.dir;
+
+            document.getElementById('gps-lng-deg').value = lngObj.deg;
+            document.getElementById('gps-lng-min').value = lngObj.min.toFixed(4);
+            document.getElementById('gps-lng-dir').value = lngObj.dir;
+
+            document.getElementById('lbl-ddm-coords').textContent = `${latObj.formatted}, ${lngObj.formatted}`;
+        }
+
+        // --- HYDRODYNAMIC MATH (Vectors & Landmasking) ---
+
+        // Simple geographical landmask to prevent arrows drawing over Taiwan and Mainland China
+        function isWater(lat, lng) {
+            // 1. Mainland China Rough Coastline Approximation
+            // Formula creates a diagonal bounding line. Anything West of it is considered land.
+            if (lng < 116.2 + (lat - 22.0) * 1.05) return false; 
+            
+            // 2. Taiwan Main Island Polygon Check
+            const taiwanPolygon = [
+                [25.30, 121.54], [25.13, 121.80], [24.50, 121.85], [23.75, 121.60], 
+                [22.75, 121.15], [21.90, 120.85], [21.90, 120.70], [22.40, 120.35], 
+                [23.00, 120.10], [23.50, 120.15], [24.00, 120.30], [24.50, 120.60], 
+                [25.00, 120.90], [25.20, 121.40]
+            ];
+            
+            let insideTaiwan = false;
+            for (let i = 0, j = taiwanPolygon.length - 1; i < taiwanPolygon.length; j = i++) {
+                let xi = taiwanPolygon[i][0], yi = taiwanPolygon[i][1];
+                let xj = taiwanPolygon[j][0], yj = taiwanPolygon[j][1];
+                
+                let intersect = ((yi > lng) != (yj > lng))
+                    && (lat < (xj - xi) * (lng - yi) / (yj - yi) + xi);
+                if (intersect) insideTaiwan = !insideTaiwan;
+            }
+            if (insideTaiwan) return false; // Hide arrow if inside Taiwan polygon
+
+            return true; // Point is over water
+        }
+
+        function simulateCombinedVector(lat, lng, targetDate) {
+            // Calculate absolute hours since EPOCH for continuous tidal phase
+            const diffMs = targetDate - EPOCH_DATE;
+            const hourOffset = diffMs / (1000 * 60 * 60);
+
+            // 1. Base Ocean Current Model
+            const distToKuroshioCore = Math.abs(lng - 122.2);
+            let kuroshioStrength = 3.2 * Math.exp(-distToKuroshioCore * 1.6);
+            if (lng < 121.0) kuroshioStrength *= 0.15; 
+
+            let baseSpeed = 0.3; 
+            let baseAngle = 10; 
+
+            if (lng >= 121.6) {
+                baseSpeed = kuroshioStrength + 0.5;
+                baseAngle = 35; 
+            } else if (lng < 121.2 && lat < 25.2) {
+                baseSpeed = 0.4 + (25.2 - lat) * 0.05; 
+                baseAngle = 355; 
+            }
+
+            // 2. Tidal Stream Model (Semi-diurnal cycle, 12.42h period)
+            const distToPenghu = Math.sqrt(Math.pow(lat - 23.5, 2) + Math.pow(lng - 119.6, 2));
+            let maxTideAmp = 1.0;
+
+            if (distToPenghu < 1.0) {
+                maxTideAmp = 3.8 * Math.exp(-distToPenghu * 0.9);
+            } else if (lng < 121.0) {
+                maxTideAmp = 2.2;
+            } else {
+                maxTideAmp = 0.5;
+            }
+
+            const spatialPhaseOffset = (lat * 2.1) - (lng * 1.3);
+            const tidalAngleRad = ((hourOffset * 2 * Math.PI) / 12.42) + spatialPhaseOffset;
+            const currentTideVal = maxTideAmp * Math.sin(tidalAngleRad);
+
+            // Corrected Tidal Geography Logic
+            let tideAngle;
+            if (lat >= 25.1 && lng > 121.1 && lng < 122.2) {
+                // North Coast of Taiwan (Keelung area): Tidal streams run roughly East/West
+                tideAngle = (currentTideVal >= 0) ? 270 : 90; // Flood West, Ebb East
+            } else if (lng <= 121.1) {
+                // Taiwan Strait / West Coast: Tides run mostly NNE/SSW
+                tideAngle = (currentTideVal >= 0) ? 20 : 200; 
+            } else {
+                // East Coast / Deep Ocean: Tides are weak and roughly N/S
+                tideAngle = (currentTideVal >= 0) ? 0 : 180;
+            }
+
+            const absTideSpeed = Math.abs(currentTideVal);
+
+            // 3. Vector Addition
+            const baseRad = (baseAngle * Math.PI) / 180;
+            const tideRad = (tideAngle * Math.PI) / 180;
+
+            const vx = (baseSpeed * Math.sin(baseRad)) + (absTideSpeed * Math.sin(tideRad));
+            const vy = (baseSpeed * Math.cos(baseRad)) + (absTideSpeed * Math.cos(tideRad));
+
+            let resultantSpeed = Math.sqrt((vx * vx) + (vy * vy));
+            let resultantAngle = Math.atan2(vx, vy) * (180 / Math.PI);
+            if (resultantAngle < 0) resultantAngle += 360;
+
+            let cardinal = 'N';
+            if (resultantAngle >= 22.5 && resultantAngle < 67.5) cardinal = 'NE';
+            else if (resultantAngle >= 67.5 && resultantAngle < 112.5) cardinal = 'E';
+            else if (resultantAngle >= 112.5 && resultantAngle < 157.5) cardinal = 'SE';
+            else if (resultantAngle >= 157.5 && resultantAngle < 202.5) cardinal = 'S';
+            else if (resultantAngle >= 202.5 && resultantAngle < 247.5) cardinal = 'SW';
+            else if (resultantAngle >= 247.5 && resultantAngle < 292.5) cardinal = 'W';
+            else if (resultantAngle >= 292.5 && resultantAngle < 337.5) cardinal = 'NW';
+
+            return {
+                speed: resultantSpeed.toFixed(2),
+                angle: Math.round(resultantAngle),
+                cardinal: cardinal,
+                baseSpeed: baseSpeed.toFixed(2),
+                tideSpeed: absTideSpeed.toFixed(2),
+                tideType: (currentTideVal >= 0) ? "Flood" : "Ebb"
+            };
+        }
+
+        function updateVectorField() {
+            if (!map || !vectorFieldLayers) return;
+            vectorFieldLayers.clearLayers();
+
+            const bounds = map.getBounds();
+            const west = bounds.getWest();
+            const east = bounds.getEast();
+            const north = bounds.getNorth();
+            const south = bounds.getSouth();
+
+            // Increase grid density slightly for better sea coverage
+            const gridCount = 10;
+            const latStep = (north - south) / gridCount;
+            const lngStep = (east - east) / gridCount; // Fix: Use width for lngStep
+            const lngActualStep = (east - west) / gridCount;
+
+            for (let i = 1; i < gridCount; i++) {
+                for (let j = 1; j < gridCount; j++) {
+                    const lat = south + i * latStep;
+                    const lng = west + j * lngActualStep;
+
+                    // Only compute and draw if over water AND within sensible bounds
+                    if (lat > 21.0 && lat < 27.0 && lng > 117.0 && lng < 125.0) {
+                        if (isWater(lat, lng)) {
+                            const vector = simulateCombinedVector(lat, lng, currentSimulationDate);
+                            const speedVal = parseFloat(vector.speed);
+
+                            let arrowColor = '#0284c7'; // Sky-600 (Ambient)
+                            if (speedVal > 1.2 && speedVal <= 2.2) arrowColor = '#075985'; // Marine-800
+                            else if (speedVal > 2.2) arrowColor = '#ea580c'; // Orange-600 (Severe)
+
+                            const size = Math.max(14, Math.min(28, 12 + speedVal * 4.5));
+                            const opacity = Math.max(0.35, Math.min(0.95, 0.2 + (speedVal / 3.5)));
+
+                            const arrowIcon = L.divIcon({
+                                html: `<div style="transform: rotate(${vector.angle}deg); opacity: ${opacity}; color: ${arrowColor}; transition: transform 0.2s;" class="flex items-center justify-center pointer-events-none">
+                                    <svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="12" y1="22" x2="12" y2="2"></line>
+                                        <polyline points="5 9 12 2 19 9"></polyline>
+                                    </svg>
+                                </div>`,
+                                className: 'bg-transparent border-0',
+                                iconSize: [size, size],
+                                iconAnchor: [size / 2, size / 2]
+                            });
+
+                            L.marker([lat, lng], { icon: arrowIcon, interactive: false }).addTo(vectorFieldLayers);
+                        }
+                    }
+                }
+            }
+        }
+
+        function recalculateLiveCurrents() {
+            if (!mainMarker) return;
+            const pos = mainMarker.getLatLng();
+            const vector = simulateCombinedVector(pos.lat, pos.lng, currentSimulationDate);
+
+            document.getElementById('live-vector-speed').textContent = vector.speed;
+            document.getElementById('live-vector-dir').textContent = `${String(vector.angle).padStart(3, '0')}° (${vector.cardinal})`;
+            document.getElementById('live-base-comp').textContent = `${vector.baseSpeed} kts`;
+            document.getElementById('live-tide-comp').textContent = `${vector.tideSpeed} kts (${vector.tideType})`;
+        }
+
+        function updateHydrodynamics() {
+            recalculateLiveCurrents();
+            updateVectorField();
+        }
+
+        function initTacticalMap() {
+            const defaultLat = 25.1300;
+            const defaultLng = 121.7400;
+
+            map = L.map('copernicus-map', { zoomControl: false }).setView([defaultLat, defaultLng], 8);
+
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}', {
+                attribution: '&copy; Esri, GEBCO, NOAA',
+                maxZoom: 13
+            }).addTo(map);
+
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Reference/MapServer/tile/{z}/{y}/{x}', {
+                maxZoom: 13
+            }).addTo(map);
+
+            vectorFieldLayers = L.layerGroup().addTo(map);
+
+            // Classic Red Teardrop GPS Pin
+            const pinIcon = L.divIcon({
+                html: `<div class="flex items-center justify-center">
+                    <svg class="w-8 h-8 text-rose-600 drop-shadow-md" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                    </svg>
+                </div>`,
+                className: 'bg-transparent border-0',
+                iconSize: [32, 32],
+                iconAnchor: [16, 32]
+            });
+
+            mainMarker = L.marker([defaultLat, defaultLng], {
+                draggable: true,
+                icon: pinIcon
+            }).addTo(map);
+
+            mainMarker.on('drag', () => {
+                const pos = mainMarker.getLatLng();
+                updateDdmInputFields(pos.lat, pos.lng);
+                recalculateLiveCurrents();
+            });
+
+            mainMarker.on('dragend', () => map.panTo(mainMarker.getLatLng()));
+
+            map.on('click', (e) => {
+                mainMarker.setLatLng(e.latlng);
+                updateDdmInputFields(e.latlng.lat, e.latlng.lng);
+                recalculateLiveCurrents();
+                map.panTo(e.latlng);
+            });
+
+            map.on('moveend', () => updateVectorField());
+
+            updateDdmInputFields(defaultLat, defaultLng);
+            updateTimeUI(); // Hydrates map and inputs
+        }
+
+        window.mapZoomIn = () => { if(map) map.zoomIn(); };
+        window.mapZoomOut = () => { if(map) map.zoomOut(); };
+
+        window.requestDeviceLocation = function() {
+            if (!navigator.geolocation) return;
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    if (map && mainMarker) {
+                        const target = L.latLng(lat, lng);
+                        mainMarker.setLatLng(target);
+                        map.setView(target, 10);
+                        updateDdmInputFields(lat, lng);
+                        updateHydrodynamics();
+                    }
+                }
+            );
+        };
+
+        window.updateMapFromDDMInputs = function() {
+            try {
+                const latDeg = parseFloat(document.getElementById('gps-lat-deg').value) || 0;
+                const latMin = parseFloat(document.getElementById('gps-lat-min').value) || 0;
+                const latDir = document.getElementById('gps-lat-dir').value;
+
+                const lngDeg = parseFloat(document.getElementById('gps-lng-deg').value) || 0;
+                const lngMin = parseFloat(document.getElementById('gps-lng-min').value) || 0;
+                const lngDir = document.getElementById('gps-lng-dir').value;
+
+                const targetLat = ddmToDd(latDeg, latMin, latDir);
+                const targetLng = ddmToDd(lngDeg, lngMin, lngDir);
+
+                if (targetLat >= -90 && targetLat <= 90 && targetLng >= -180 && targetLng <= 180) {
+                    const coords = L.latLng(targetLat, targetLng);
+                    mainMarker.setLatLng(coords);
+                    map.setView(coords, map.getZoom());
+                    updateDdmInputFields(targetLat, targetLng);
+                    updateHydrodynamics();
+                }
+            } catch (e) {}
+        };
+
+        // --- REGIONAL CHART DATA & LOGIC ---
         const regionData = {
             north: {
                 title: "5-10 NM North of Taiwan Coast",
@@ -489,475 +920,89 @@
             }
         };
 
-        // Itinerary Data
-        const itineraryData = [
-            {
-                id: "leg-1",
-                dates: "May 30 – June 4",
-                title: "Delivery: HK to Keelung",
-                desc: "Sailing northeast through the Taiwan Strait. In early June, the southwest monsoon begins to establish, generally creating a favorable northward surface current. The optimal departure window opens May 30.",
-                hazards: [
-                    "High commercial shipping traffic in the Strait.",
-                    "Squalls associated with the transitioning monsoon season.",
-                    "Strong local tidal streams accelerating around coastal headlands (West Coast)."
-                ],
-                strategy: [
-                    "Stay slightly offshore (5-10 NM) to ride the prevailing northward summer current.",
-                    "Time the rounding of the northern cape (Fuguijiao) with a favorable eastbound tidal stream.",
-                    "Ensure arrival before the June 5 mandatory check-in deadline."
-                ]
-            },
-            {
-                id: "leg-2",
-                dates: "June 5 – 7",
-                title: "Keelung Race Segment",
-                desc: "Inshore and coastal racing around the North Coast. This area features complex interactions between the coastal shelf and the edges of the Kuroshio.",
-                hazards: [
-                    "Variable local eddies created by the rugged coastline.",
-                    "Tidal rips near prominent points and harbor entrances."
-                ],
-                strategy: [
-                    "Rely heavily on hourly tidal models (CWA data).",
-                    "Seek current relief near the shore during adverse flood tides."
-                ]
-            },
-            {
-                id: "leg-3",
-                dates: "June 8 – 9",
-                title: "Race 2: Keelung to Ishigaki",
-                desc: "The critical Kuroshio Crossing. You will be crossing one of the world's strongest ocean currents, which flows steadily northward at 2 to 4 knots.",
-                hazards: [
-                    "Massive cross-track error (Northerly set) if the current is not compensated for.",
-                    "Extremely steep and dangerous seas if a Northerly wind opposes the Kuroshio."
-                ],
-                strategy: [
-                    "Aim significantly south of the rhumb line initially to account for the relentless northward push.",
-                    "The combined vector will be almost entirely dominated by the Kuroshio; tidal influence drops drastically offshore."
-                ]
-            },
-            {
-                id: "leg-4",
-                dates: "June 10 – 13",
-                title: "Ishigaki to Miyako & Miyako Cup",
-                desc: "Lay day processing in Ishigaki on the 10th. Racing to Miyako (11-12th) and participating in the Cup (13th).",
-                hazards: [
-                    "Coral reefs and complex inshore bathymetry around the Ryukyu Islands.",
-                    "Tidal streams funnelling between the island chains."
-                ],
-                strategy: [
-                    "Currents are generally lighter and more variable here than the main Kuroshio stream.",
-                    "Focus shifts to wind strategy and local tidal gates between islands."
-                ]
-            },
-            {
-                id: "leg-5",
-                dates: "June 14 – 19",
-                title: "Return: Miyako to HK (via Penghu)",
-                desc: "The return delivery. You will cross the Kuroshio again, this time likely getting pushed North while aiming West/Southwest. A contingency stopover in Penghu is planned.",
-                hazards: [
-                    "Re-crossing the Kuroshio (requires Southerly compensation).",
-                    "Navigating the Penghu area: Expect extreme tidal vectors (up to 4+ knots) and severe turbulence in the channels.",
-                    "Potential head current in the Taiwan Strait if the summer northward drift is fully established."
-                ],
-                strategy: [
-                    "Use the Penghu stopover to time your exit into the Taiwan Strait with a strong ebb (Southward) tide.",
-                    "Arrive in HK before the firm deadline of June 20."
-                ]
-            }
-        ];
-
-        // --- STATE & INITIALIZATION ---
-        
         let currentChartInstance = null;
 
-        // Initialize Chart
         function initChart(regionKey) {
             const ctx = document.getElementById('currentsChart').getContext('2d');
             const data = regionData[regionKey];
-
-            // Calculate Resultant Combined Vector (Base + Tide)
             const resultantData = data.baseData.map((val, idx) => val + data.tideData[idx]);
 
-            if (currentChartInstance) {
-                currentChartInstance.destroy();
-            }
+            if (currentChartInstance) currentChartInstance.destroy();
 
             currentChartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: data.labels,
                     datasets: [
-                        {
-                            label: 'Combined Vector (Total Speed)',
-                            data: resultantData,
-                            borderColor: '#0c4a6e', // marine-900
-                            backgroundColor: 'rgba(12, 74, 110, 0.1)',
-                            borderWidth: 3,
-                            fill: true,
-                            tension: 0.4,
-                            pointRadius: 4
-                        },
-                        {
-                            label: 'Tidal Stream Component',
-                            data: data.tideData,
-                            borderColor: '#94a3b8', // slate-400
-                            borderWidth: 2,
-                            borderDash: [5, 5],
-                            fill: false,
-                            tension: 0.4,
-                            pointRadius: 0
-                        },
-                        {
-                            label: 'Ocean Current (Base)',
-                            data: data.baseData,
-                            borderColor: '#0284c7', // sky-600
-                            borderWidth: 2,
-                            fill: false,
-                            tension: 0.1,
-                            pointRadius: 0
-                        }
+                        { label: 'Combined Vector (Speed)', data: resultantData, borderColor: '#0c4a6e', backgroundColor: 'rgba(12, 74, 110, 0.1)', borderWidth: 3, fill: true, tension: 0.4, pointRadius: 4 },
+                        { label: 'Tidal Component', data: data.tideData, borderColor: '#94a3b8', borderWidth: 2, borderDash: [5, 5], fill: false, tension: 0.4, pointRadius: 0 },
+                        { label: 'Ocean Base', data: data.baseData, borderColor: '#0284c7', borderWidth: 2, fill: false, tension: 0.1, pointRadius: 0 }
                     ]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false,
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + ' kts';
-                                }
-                            }
-                        },
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                usePointStyle: true,
-                                boxWidth: 8
-                            }
-                        }
-                    },
+                    responsive: true, maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
                     scales: {
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Velocity (Knots)'
-                            },
-                            grid: {
-                                color: '#e7e5e4'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
+                        y: { title: { display: true, text: 'Knots' }, grid: { color: '#e7e5e4' } },
+                        x: { grid: { display: false } }
                     }
                 }
             });
         }
 
-        // --- INTERACTION LOGIC ---
+        // --- ITINERARY LOGIC ---
+        const itineraryData = [
+            { id: "leg-1", dates: "May 30 – June 4", title: "Delivery: HK to Keelung", desc: "Sailing northeast through the Taiwan Strait. Favorable northward surface current.", hazards: ["High commercial traffic.", "Strong local tidal streams."], strategy: ["Stay offshore to ride the northward current."] },
+            { id: "leg-2", dates: "June 5 – 7", title: "Keelung Race Segment", desc: "Inshore and coastal racing around the North Coast.", hazards: ["Variable local eddies.", "Tidal rips near harbor entrances."], strategy: ["Rely heavily on hourly tidal models."] },
+            { id: "leg-3", dates: "June 8 – 9", title: "Race 2: Keelung to Ishigaki", desc: "The critical Kuroshio Crossing. Steadily northward at 2 to 4 knots.", hazards: ["Massive cross-track error (Northerly set).", "Steep seas if Northerly wind opposes current."], strategy: ["Aim south of the rhumb line initially."] },
+            { id: "leg-4", dates: "June 10 – 13", title: "Ishigaki to Miyako & Miyako Cup", desc: "Racing to Miyako and participating in the Cup.", hazards: ["Coral reefs and complex inshore bathymetry.", "Tidal streams funnelling between islands."], strategy: ["Currents are lighter here. Focus on wind strategy."] },
+            { id: "leg-5", dates: "June 14 – 19", title: "Return: Miyako to HK", desc: "The return delivery. A contingency stopover in Penghu is planned.", hazards: ["Re-crossing the Kuroshio.", "Penghu area: extreme tidal vectors up to 4+ knots."], strategy: ["Time exit into Taiwan Strait with a strong ebb tide."] }
+        ];
 
-        // Region Tabs Logic
-        const regionTabs = document.querySelectorAll('.region-tab');
-        regionTabs.forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                // Update UI classes
-                regionTabs.forEach(t => {
-                    t.classList.remove('border-marine-900', 'text-marine-900', 'bg-white');
-                    t.classList.add('border-transparent', 'text-slate-500');
-                });
-                e.target.classList.remove('border-transparent', 'text-slate-500');
-                e.target.classList.add('border-marine-900', 'text-marine-900', 'bg-white');
-
-                // Update Data
-                const region = e.target.getAttribute('data-region');
-                const data = regionData[region];
-                
-                document.getElementById('region-title').textContent = data.title;
-                document.getElementById('region-desc').textContent = data.desc;
-                document.getElementById('stat-base').textContent = data.base;
-                document.getElementById('stat-tide').textContent = data.tide;
-                document.getElementById('region-takeaway').innerHTML = `<strong>Navigator's Takeaway:</strong> ${data.takeaway}`;
-
-                // Update Chart
-                initChart(region);
-            });
-        });
-
-        // Itinerary Timeline Logic
-        const timelineContainer = document.getElementById('timeline-container');
-        
         function renderTimeline() {
+            const container = document.getElementById('timeline-container');
             itineraryData.forEach((leg, index) => {
                 const btn = document.createElement('button');
                 btn.className = `timeline-btn w-full text-left px-4 py-3 rounded-lg border border-sand-200 transition-all font-medium ${index === 0 ? 'active' : 'bg-sand-50 text-slate-600 hover:bg-sand-100'}`;
-                btn.innerHTML = `
-                    <div class="text-xs font-bold uppercase tracking-wide opacity-80 mb-1">${leg.dates}</div>
-                    <div class="text-sm">${leg.title.split(':')[0]}</div>
-                `;
+                btn.innerHTML = `<div class="text-xs font-bold uppercase tracking-wide opacity-80 mb-1">${leg.dates}</div><div class="text-sm">${leg.title.split(':')[0]}</div>`;
                 
                 btn.addEventListener('click', () => {
-                    // Update active state
-                    document.querySelectorAll('.timeline-btn').forEach(b => {
-                        b.classList.remove('active');
-                        b.classList.add('bg-sand-50', 'text-slate-600');
-                    });
-                    btn.classList.remove('bg-sand-50', 'text-slate-600');
-                    btn.classList.add('active');
+                    document.querySelectorAll('.timeline-btn').forEach(b => { b.classList.remove('active'); b.classList.add('bg-sand-50', 'text-slate-600'); });
+                    btn.classList.remove('bg-sand-50', 'text-slate-600'); btn.classList.add('active');
 
-                    // Update Content Panel
                     document.getElementById('leg-dates').textContent = leg.dates;
                     document.getElementById('leg-title').textContent = leg.title;
                     document.getElementById('leg-desc').textContent = leg.desc;
-                    
-                    const hazardList = document.getElementById('leg-hazards');
-                    hazardList.innerHTML = leg.hazards.map(h => `<li>${h}</li>`).join('');
-                    
-                    const strategyList = document.getElementById('leg-strategy');
-                    strategyList.innerHTML = leg.strategy.map(s => `<li>${s}</li>`).join('');
+                    document.getElementById('leg-hazards').innerHTML = leg.hazards.map(h => `<li>${h}</li>`).join('');
+                    document.getElementById('leg-strategy').innerHTML = leg.strategy.map(s => `<li>${s}</li>`).join('');
                 });
-                
-                timelineContainer.appendChild(btn);
+                container.appendChild(btn);
             });
         }
 
-        // --- STREAMING_CHUNK:Initializing dual assistant profiles and API payloads... ---
-        // --- GEM NAVIGATORS & LOCAL SKIPPER AI LOGIC ---
-        
-        let currentAssistant = 'navigator';
-        
-        const assistantProfiles = {
-            navigator: {
-                title: "GEM Navigator - A+",
-                avatar: "A+",
-                desc: "Ask about currents, optimal wind angles, harbor approaches, or the Kuroshio crossing vectors for your 2026 campaign.",
-                suggested: [
-                    { text: "⚓ Kuroshio Crossing Strategy", query: "How do I best tackle the Kuroshio current when crossing from Keelung to Ishigaki?" },
-                    { text: "🌪️ Penghu Spring Tide Risks", query: "What are the risks of sailing against a spring tide in the Penghu Channel?" },
-                    { text: "📊 Early June Weather Models", query: "Which weather models are most accurate for the Southwest Monsoon in early June?" }
-                ],
-                greeting: "Welcome aboard, Navigator. I am <strong>GEM Navigator - A+</strong>, your ocean racing tactical consultant.<br><br>How can I help you optimize your transit vector or tactical plan for the upcoming 2026 Keelung & Miyako Cup campaign?",
-                systemPrompt: "You are GEM Navigator - A+, a world-class yacht racing tactical navigator specializing in the hydrodynamics, currents (Kuroshio, Taiwan Strait), and meteorological patterns (Southwest Monsoon, Typhoons) around Taiwan, Hong Kong, and the southern Ryukyu islands (Ishigaki, Miyako). Provide tactical, direct, and authoritative offshore navigation advice. Keep responses highly actionable, structured, and under 3-4 paragraphs. Always use knots for speed and reference local landmarks when appropriate.",
-                externalLink: false
-            },
-            skipper: {
-                title: "Taiwan Skipper GEM",
-                avatar: "🇹🇼",
-                desc: "Get local port wisdom, shelter advice, CIQS processing tips, and coastal navigation secrets directly from a veteran Taiwanese skipper.",
-                suggested: [
-                    { text: "🏮 Keelung Port Entry & Shelter", query: "What are the entry procedures and best shelter spots for a visiting yacht in Keelung Outer Harbour?" },
-                    { text: "🏝️ Penghu Anchorage Secrets", query: "Can you recommend safe, protected anchorages in Penghu during strong winds?" },
-                    { text: "🛂 Taiwan Customs / CIQS Guide", query: "What is the typical CIQS customs clearance process for a yacht returning from Japan to Taiwan?" }
-                ],
-                greeting: "Ahoy! I am the <strong>Taiwan Skipper GEM</strong>. As a local captain, I've sailed every inch of our beautiful coastlines—from the rough waters of the Penghu Channel to the steep cliffs of Hualien.<br><br>How can I help you navigate our ports, find safe anchorage, or deal with local customs and sea conditions?",
-                systemPrompt: "You are Taiwan Skipper GEM, an experienced local sea captain and cruising skipper with intimate knowledge of the coastlines of Taiwan, the Penghu Archipelago, Keelung, Kaohsiung, and local ports. You specialize in local sailing wisdom, safe harbors, shelter bays, customs/CIQS processes for Taiwan, maritime culture, and piloting offshore vessels in Taiwanese waters. Keep responses friendly, practical, safety-focused, and highly informative for incoming foreign cruising yachts. Keep replies under 3-4 paragraphs and mention local customs or landmarks.",
-                externalLink: "https://gemini.google.com/gem/1USNBM0SPQIZCxG5w2co7EisvRgHHCecv?usp=sharing"
-            }
-        };
-
-        const chatMessagesContainer = document.getElementById('chat-messages');
-        const chatInput = document.getElementById('chat-input');
-        const chatForm = document.getElementById('chat-form');
-        const chatSubmitBtn = document.getElementById('chat-submit-btn');
-
-        // Switch between assistants
-        window.selectAssistant = function(type) {
-            currentAssistant = type;
-            const profile = assistantProfiles[type];
-            
-            // Update Toggle Button Visuals
-            const navBtn = document.getElementById('toggle-navigator-btn');
-            const skipBtn = document.getElementById('toggle-skipper-btn');
-            
-            if (type === 'navigator') {
-                navBtn.className = "px-5 py-3 rounded-xl text-xs font-bold transition-all shadow-md bg-marine-900 text-white border border-marine-900 focus:outline-none";
-                skipBtn.className = "px-5 py-3 rounded-xl text-xs font-medium transition-all shadow-sm bg-white text-slate-600 border border-sand-200 hover:bg-sand-100 flex items-center gap-1.5 focus:outline-none";
-            } else {
-                navBtn.className = "px-5 py-3 rounded-xl text-xs font-medium transition-all shadow-sm bg-white text-slate-600 border border-sand-200 hover:bg-sand-100 focus:outline-none";
-                skipBtn.className = "px-5 py-3 rounded-xl text-xs font-bold transition-all shadow-md bg-marine-900 text-white border border-marine-900 flex items-center gap-1.5 focus:outline-none";
-            }
-            
-            // Update Sidebar Details
-            document.getElementById('sidebar-title').textContent = profile.title;
-            document.getElementById('sidebar-desc').textContent = profile.desc;
-            
-            const avatarEl = document.getElementById('sidebar-avatar');
-            avatarEl.textContent = profile.avatar;
-            if (type === 'navigator') {
-                avatarEl.className = "w-10 h-10 bg-marine-900 text-white rounded-xl flex items-center justify-center font-bold text-xl shadow-md transition-all";
-            } else {
-                avatarEl.className = "w-10 h-10 bg-amber-500 text-white rounded-xl flex items-center justify-center font-bold text-xl shadow-md transition-all";
-            }
-            
-            // Update Suggested Queries
-            const suggContainer = document.getElementById('suggested-queries-container');
-            suggContainer.innerHTML = '';
-            profile.suggested.forEach(item => {
-                const b = document.createElement('button');
-                b.className = "w-full text-left text-xs bg-white hover:bg-marine-50 hover:text-marine-900 text-slate-700 p-2.5 rounded-lg border border-sand-200 transition-colors shadow-sm block focus:outline-none";
-                b.textContent = item.text;
-                b.onclick = () => sendQuickQuery(item.query);
-                suggContainer.appendChild(b);
-            });
-            
-            // Update Link Container
-            const linkContainer = document.getElementById('external-link-container');
-            const linkEl = document.getElementById('external-gem-link');
-            if (profile.externalLink) {
-                linkEl.href = profile.externalLink;
-                linkContainer.classList.remove('hidden');
-            } else {
-                linkContainer.classList.add('hidden');
-            }
-            
-            // Reset chat history list with the new greeting
-            chatMessagesContainer.innerHTML = '';
-            appendMessage(profile.title, profile.greeting, true);
-        };
-
-        function appendMessage(sender, text, isAi = false) {
-            if (!chatMessagesContainer) return;
-            const wrapper = document.createElement('div');
-            wrapper.className = `flex items-start gap-3 ${!isAi ? 'justify-end' : ''}`;
-            
-            let avatarHtml = '';
-            if (isAi) {
-                const isNav = (currentAssistant === 'navigator');
-                const avatarBg = isNav ? 'bg-marine-900' : 'bg-amber-500';
-                const avatarIcon = isNav ? 'A+' : '🇹🇼';
-                avatarHtml = `<div class="w-8 h-8 rounded-lg ${avatarBg} text-white flex items-center justify-center text-sm font-bold flex-shrink-0 shadow-sm">${avatarIcon}</div>`;
-            }
-                
-            const messageBoxClass = isAi 
-                ? 'bg-white border border-sand-200 rounded-2xl rounded-tl-none text-slate-700' 
-                : 'bg-marine-900 text-white rounded-2xl rounded-tr-none';
-
-            let formattedText = text
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/\n/g, '<br>')
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-
-            wrapper.innerHTML = `
-                ${avatarHtml}
-                <div class="${messageBoxClass} p-4 max-w-[85%] shadow-sm">
-                    <p class="text-sm leading-relaxed">${formattedText}</p>
-                </div>
-            `;
-            chatMessagesContainer.appendChild(wrapper);
-            chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
-        }
-
-        function appendTypingIndicator() {
-            if (!chatMessagesContainer) return;
-            const indicator = document.createElement('div');
-            indicator.id = 'typing-indicator';
-            indicator.className = 'flex items-start gap-3';
-            
-            const isNav = (currentAssistant === 'navigator');
-            const avatarBg = isNav ? 'bg-marine-900' : 'bg-amber-500';
-            const avatarIcon = isNav ? 'A+' : '🇹🇼';
-            
-            indicator.innerHTML = `
-                <div class="w-8 h-8 rounded-lg ${avatarBg} text-white flex items-center justify-center text-sm font-bold flex-shrink-0 shadow-sm">${avatarIcon}</div>
-                <div class="bg-white border border-sand-200 rounded-2xl rounded-tl-none p-4 max-w-[85%] shadow-sm">
-                    <div class="flex space-x-1.5 items-center h-4">
-                        <div class="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0ms"></div>
-                        <div class="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 150ms"></div>
-                        <div class="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 300ms"></div>
-                    </div>
-                </div>
-            `;
-            chatMessagesContainer.appendChild(indicator);
-            chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
-        }
-
-        function removeTypingIndicator() {
-            const indicator = document.getElementById('typing-indicator');
-            if (indicator) indicator.remove();
-        }
-
-        window.sendQuickQuery = function(text) {
-            if (chatInput) {
-                chatInput.value = text;
-                chatForm.dispatchEvent(new Event('submit'));
-            }
-        };
-
-        window.handleQuerySubmit = async function(event) {
-            event.preventDefault();
-            const prompt = chatInput.value.trim();
-            if (!prompt) return;
-
-            appendMessage('User', prompt, false);
-            chatInput.value = '';
-            
-            appendTypingIndicator();
-            
-            chatSubmitBtn.disabled = true;
-            chatSubmitBtn.classList.add('opacity-50');
-
-            try {
-                const activeProfile = assistantProfiles[currentAssistant];
-                const apiKey = ""; 
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-
-                const payload = {
-                    contents: [{ parts: [{ text: prompt }] }],
-                    systemInstruction: {
-                        parts: [{ text: activeProfile.systemPrompt }]
-                    }
-                };
-
-                let response;
-                let delay = 1000;
-                for (let i = 0; i < 3; i++) {
-                    try {
-                        response = await fetch(apiUrl, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
-                        });
-                        if (response.ok) break;
-                    } catch (err) {
-                        if (i === 2) throw err;
-                    }
-                    await new Promise(res => setTimeout(res, delay));
-                    delay *= 2;
-                }
-
-                removeTypingIndicator();
-
-                if (response && response.ok) {
-                    const result = await response.json();
-                    const aiText = result.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I could not generate a response. Please try again.";
-                    appendMessage(activeProfile.title, aiText, true);
-                } else {
-                    appendMessage(activeProfile.title, "Could not connect to the sailing server. Please verify your connection or try again later.", true);
-                }
-            } catch (error) {
-                removeTypingIndicator();
-                appendMessage(activeProfile.title, "An error occurred while processing your navigation request. Please try again.", true);
-            } finally {
-                chatSubmitBtn.disabled = false;
-                chatSubmitBtn.classList.remove('opacity-50');
-            }
-        };
-
-        // On Load
+        // --- DOM LOAD ---
         document.addEventListener('DOMContentLoaded', () => {
-            initChart('north');      // Load first chart
-            renderTimeline();        // Load timeline buttons
-            selectAssistant('navigator'); // Initialize chat and toggle states
-        });
+            initTacticalMap();
+            initChart('north');
+            
+            document.querySelectorAll('.region-tab').forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    document.querySelectorAll('.region-tab').forEach(t => { t.classList.remove('border-marine-900', 'text-marine-900', 'bg-white'); t.classList.add('border-transparent', 'text-slate-500'); });
+                    e.target.classList.remove('border-transparent', 'text-slate-500'); e.target.classList.add('border-marine-900', 'text-marine-900', 'bg-white');
 
+                    const region = e.target.getAttribute('data-region');
+                    const data = regionData[region];
+                    document.getElementById('region-title').textContent = data.title;
+                    document.getElementById('region-desc').textContent = data.desc;
+                    document.getElementById('stat-base').textContent = data.base;
+                    document.getElementById('stat-tide').textContent = data.tide;
+                    document.getElementById('region-takeaway').innerHTML = `<strong>Navigator's Takeaway:</strong> ${data.takeaway}`;
+                    initChart(region);
+                });
+            });
+
+            renderTimeline();
+        });
     </script>
 </body>
 </html>
