@@ -363,68 +363,69 @@
             </div>
         </section>
 
-        <!-- Section 5: GEM Navigator - A+ -->
+        <!-- Section 5: Dual GEM Navigators & Local Skipper AI -->
         <section id="gem-navigator" class="scroll-mt-20 pb-12">
-            <h2 class="text-3xl font-bold text-marine-900 mb-4">GEM Navigator - A+</h2>
-            <p class="text-lg text-slate-600 mb-8 max-w-4xl">
-                Need specific routing assistance, weather forecasts, or tactical current analyses? Ask our automated tactical sailing navigator. GEM Navigator - A+ uses real-time context and high-resolution coastal profiles to assist with your offshore racing strategy.
+            <h2 class="text-3xl font-bold text-marine-900 mb-4">Sailing & Local Cruising AI Assistants</h2>
+            <p class="text-lg text-slate-600 mb-6 max-w-4xl">
+                Need specialized routing assistance, weather forecasts, or local Taiwanese harbor secrets? Switch between our specialized AI officers to help guide your campaign.
             </p>
+
+            <!-- Profile Selector Toggles -->
+            <div class="flex flex-wrap gap-3 mb-6">
+                <button id="toggle-navigator-btn" onclick="selectAssistant('navigator')" class="px-5 py-3 rounded-xl text-xs font-bold transition-all shadow-md bg-marine-900 text-white border border-marine-900 focus:outline-none">
+                    ✨ GEM Navigator - A+ (Tactical)
+                </button>
+                <button id="toggle-skipper-btn" onclick="selectAssistant('skipper')" class="px-5 py-3 rounded-xl text-xs font-medium transition-all shadow-sm bg-white text-slate-600 border border-sand-200 hover:bg-sand-100 flex items-center gap-1.5 focus:outline-none">
+                    🇹🇼 Taiwan Skipper GEM (Local Port Wisdom)
+                </button>
+            </div>
 
             <div class="bg-white rounded-2xl shadow-lg border border-sand-200 overflow-hidden grid grid-cols-1 lg:grid-cols-12">
                 <!-- Chat Panel Sidebar -->
                 <div class="lg:col-span-4 bg-sand-100 p-6 border-r border-sand-200 flex flex-col justify-between">
                     <div>
                         <div class="flex items-center space-x-3 mb-6">
-                            <div class="w-10 h-10 bg-marine-900 text-white rounded-xl flex items-center justify-center font-bold text-xl shadow-md">
+                            <div id="sidebar-avatar" class="w-10 h-10 bg-marine-900 text-white rounded-xl flex items-center justify-center font-bold text-xl shadow-md transition-all">
                                 A+
                             </div>
                             <div>
-                                <h3 class="font-bold text-marine-900 text-lg">Tactical Sailing Officer</h3>
-                                <p class="text-xs text-slate-500">Online & Ready to Route</p>
+                                <h3 id="sidebar-title" class="font-bold text-marine-900 text-lg">Tactical Sailing Officer</h3>
+                                <p class="text-xs text-slate-500 flex items-center gap-1">
+                                    <span class="w-2 h-2 bg-emerald-500 rounded-full inline-block animate-pulse"></span> Online &amp; Ready
+                                </p>
                             </div>
                         </div>
 
-                        <p class="text-sm text-slate-600 mb-6">
+                        <p id="sidebar-desc" class="text-sm text-slate-600 mb-6 transition-all">
                             Ask about currents, optimal wind angles, harbor approaches, or the Kuroshio crossing for your 2026 campaign.
                         </p>
 
                         <!-- Suggestion Prompts -->
-                        <div class="space-y-2">
-                            <span class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Suggested Enquiries</span>
-                            <button onclick="sendQuickQuery('How do I best tackle the Kuroshio current when crossing from Keelung to Ishigaki?')" class="w-full text-left text-xs bg-white hover:bg-marine-50 hover:text-marine-900 text-slate-700 p-2.5 rounded-lg border border-sand-200 transition-colors shadow-sm block">
-                                ⚓ Kuroshio Crossing Strategy
-                            </button>
-                            <button onclick="sendQuickQuery('What are the risks of sailing against a spring tide in the Penghu Channel?')" class="w-full text-left text-xs bg-white hover:bg-marine-50 hover:text-marine-900 text-slate-700 p-2.5 rounded-lg border border-sand-200 transition-colors shadow-sm block">
-                                🌪️ Penghu Spring Tide Risks
-                            </button>
-                            <button onclick="sendQuickQuery('Which weather models are most accurate for the Southwest Monsoon in early June?')" class="w-full text-left text-xs bg-white hover:bg-marine-50 hover:text-marine-900 text-slate-700 p-2.5 rounded-lg border border-sand-200 transition-colors shadow-sm block">
-                                📊 Early June Weather Models
-                            </button>
+                        <div class="space-y-3">
+                            <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Suggested Enquiries</span>
+                            <div id="suggested-queries-container" class="space-y-2">
+                                <!-- Suggestions injected dynamically via Javascript -->
+                            </div>
+                            
+                            <!-- External Link Button (Shows only for Skipper) -->
+                            <div id="external-link-container" class="mt-4 pt-4 border-t border-sand-200 hidden">
+                                <a id="external-gem-link" href="https://gemini.google.com/gem/1USNBM0SPQIZCxG5w2co7EisvRgHHCecv?usp=sharing" target="_blank" class="w-full text-center text-xs bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold p-3 rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5">
+                                    🚀 Launch Original Skipper GEM ↗
+                                </a>
+                            </div>
                         </div>
                     </div>
 
                     <div class="mt-8 pt-4 border-t border-sand-200">
-                        <span class="text-xs text-slate-400 block">Powered by Gemini 3.1 Flash. Always double check navigation charts before making critical routing decisions.</span>
+                        <span class="text-xs text-slate-400 block">Powered by Gemini 3.1 Flash. Always double check navigation charts before making critical decisions.</span>
                     </div>
                 </div>
 
                 <!-- Chat Box Main Interface -->
-                <div class="lg:col-span-8 flex flex-col h-[500px]">
+                <div class="lg:col-span-8 flex flex-col h-[520px]">
                     <!-- Chat Window Area -->
                     <div id="chat-messages" class="flex-1 overflow-y-auto p-6 space-y-4 bg-sand-50/50">
                         <!-- Bot Greeting Message -->
-                        <div class="flex items-start gap-3">
-                            <div class="w-8 h-8 rounded-lg bg-marine-900 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
-                                A+
-                            </div>
-                            <div class="bg-white border border-sand-200 rounded-2xl rounded-tl-none p-4 max-w-[85%] shadow-sm">
-                                <p class="text-sm text-slate-700 leading-relaxed">
-                                    Welcome aboard, Navigator. I am <strong>GEM Navigator - A+</strong>, your ocean racing tactical consultant. 
-                                    <br><br>
-                                    How can I help you optimize your transit vector or tactical plan for the upcoming 2026 Keelung & Miyako Cup campaign?
-                                </p>
-                            </div>
-                        </div>
                     </div>
 
                     <!-- Input Area -->
@@ -568,234 +569,10 @@
         // --- STATE & INITIALIZATION ---
         
         let currentChartInstance = null;
-        let mapInstance = null;
-        let mapCurrentMarker = null;
-        let vectorOverlayLayer = null;
 
-        // Initialize Map & Tactical Copernicus Vectors
-        function initTacticalMap() {
-            const mapContainer = document.getElementById('copernicus-map');
-            if (!mapContainer) {
-                console.error("Map container 'copernicus-map' not found in DOM.");
-                return;
-            }
-
-            // Default center: Keelung
-            const defaultLat = 25.1300;
-            const defaultLng = 121.7400;
-
-            // Initialize Leaflet Map (disable native zoom control to use our custom buttons smoothly)
-            mapInstance = L.map('copernicus-map', {
-                zoomControl: false,
-                attributionControl: false
-            }).setView([defaultLat, defaultLng], 10);
-
-            // Load Premium Esri Ocean Basemap
-            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}', {
-                maxZoom: 13,
-                minZoom: 4
-            }).addTo(mapInstance);
-
-            // Overlay labels & bathymetric details
-            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Reference/MapServer/tile/{z}/{y}/{x}', {
-                maxZoom: 13,
-                minZoom: 4
-            }).addTo(mapInstance);
-
-            // Add standard marker
-            mapCurrentMarker = L.marker([defaultLat, defaultLng]).addTo(mapInstance);
-
-            // Create LayerGroup for dynamic vector overlays
-            vectorOverlayLayer = L.layerGroup().addTo(mapInstance);
-
-            // Monitor map move/zoom changes to recreate beautiful localized current arrows
-            mapInstance.on('moveend', () => {
-                const center = mapInstance.getCenter();
-                updateCalculatedCurrent(center.lat, center.lng);
-                renderCurrentVectorGrid();
-            });
-
-            // Initial current readout and vectors
-            updateCalculatedCurrent(defaultLat, defaultLng);
-            renderCurrentVectorGrid();
-        }
-
-        window.mapZoomIn = function() {
-            if (mapInstance) mapInstance.zoomIn();
-        }
-
-        window.mapZoomOut = function() {
-            if (mapInstance) mapInstance.zoomOut();
-        }
-
-        // Handle browser geolocation
-        window.requestDeviceLocation = function() {
-            if (!navigator.geolocation) {
-                alert("Geolocation is not supported by your device browser.");
-                return;
-            }
-
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-
-                    // Update UI inputs
-                    document.getElementById('gps-lat').value = lat.toFixed(4);
-                    document.getElementById('gps-lng').value = lng.toFixed(4);
-
-                    // Re-center map & update vectors
-                    panMapTo(lat, lng);
-                },
-                (error) => {
-                    console.error("Geolocation failed:", error);
-                    alert("Unable to retrieve GPS location. Please manually enter coordinates in the fields provided.");
-                },
-                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-            );
-        }
-
-        // Map updates from coordinate input fields
-        window.updateMapFromInputs = function() {
-            const lat = parseFloat(document.getElementById('gps-lat').value);
-            const lng = parseFloat(document.getElementById('gps-lng').value);
-
-            if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-                alert("Please enter valid decimal coordinates (Lat: -90 to 90, Lng: -180 to 180).");
-                return;
-            }
-
-            panMapTo(lat, lng);
-        }
-
-        // Map panning helper
-        function panMapTo(lat, lng) {
-            if (!mapInstance) return;
-            mapInstance.setView([lat, lng], 11);
-            if (mapCurrentMarker) mapCurrentMarker.setLatLng([lat, lng]);
-            updateCalculatedCurrent(lat, lng);
-            renderCurrentVectorGrid();
-        }
-
-        // Calculate simulated high-resolution current values based on coordinate boundaries
-        function updateCalculatedCurrent(lat, lng) {
-            let speed = 1.0;
-            let dir = 45;
-            let areaName = "Coastal Sector";
-
-            // Geolocation heuristics to dynamically adjust model readouts matching actual oceanographic features
-            if (lat >= 24.8 && lat <= 25.6 && lng >= 121.3 && lng <= 122.2) {
-                // Keelung / North Taiwan Coast
-                speed = 1.6 + Math.sin(lat * 10) * 0.4;
-                dir = 55;
-                areaName = "North Coast / Keelung Sector";
-            } else if (lat >= 22.0 && lat <= 25.0 && lng >= 119.5 && lng <= 121.2) {
-                // Taiwan Strait / West Coast
-                speed = 2.1 + Math.cos(lng * 8) * 0.5;
-                dir = 15;
-                areaName = "Taiwan Strait West Shore";
-            } else if (lat >= 23.0 && lat <= 23.8 && lng >= 119.0 && lng <= 119.9) {
-                // Penghu Archipelagos
-                speed = 3.4 + Math.sin(lat * 5) * 0.8;
-                dir = 350;
-                areaName = "Penghu Channel Funnel";
-            } else if (lat >= 22.0 && lat <= 24.5 && lng >= 122.0 && lng <= 124.5) {
-                // Kuroshio Main Stream Core (Keelung to Ishigaki Corridor)
-                speed = 3.1 + Math.sin(lng * 3) * 0.6;
-                dir = 28;
-                areaName = "Kuroshio Core Current Flow";
-            } else {
-                // Open Ocean Baseline Physics Model
-                speed = 0.8 + Math.abs(Math.sin(lat + lng)) * 0.7;
-                dir = Math.round((Math.abs(lat * lng * 17) % 360));
-                areaName = "Oceanic Survey Area";
-            }
-
-            // Convert direction degrees into compass quadrants
-            const compassPoints = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
-            const rawIndex = Math.floor(((dir + 11.25) % 360) / 22.5);
-            const cardinal = compassPoints[rawIndex];
-
-            // Display updates
-            const lblLat = document.getElementById('lbl-lat');
-            const lblLng = document.getElementById('lbl-lng');
-            const currentAreaLbl = document.getElementById('current-area-lbl');
-            const liveVectorSpeed = document.getElementById('live-vector-speed');
-            const liveVectorDir = document.getElementById('live-vector-dir');
-            const liveVectorArrow = document.getElementById('live-vector-arrow');
-
-            if (lblLat) lblLat.textContent = `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? 'N' : 'S'}`;
-            if (lblLng) lblLng.textContent = `${Math.abs(lng).toFixed(4)}° ${lng >= 0 ? 'E' : 'W'}`;
-            if (currentAreaLbl) currentAreaLbl.textContent = areaName;
-            if (liveVectorSpeed) liveVectorSpeed.textContent = speed.toFixed(1);
-            if (liveVectorDir) liveVectorDir.textContent = `${dir}° (${cardinal})`;
-            if (liveVectorArrow) liveVectorArrow.style.transform = `rotate(${dir}deg)`;
-        }
-
-        // Draw a simulated dynamic grid of current vector arrows within the current view coordinates
-        function renderCurrentVectorGrid() {
-            if (!mapInstance || !vectorOverlayLayer) return;
-            vectorOverlayLayer.clearLayers();
-
-            const bounds = mapInstance.getBounds();
-            const latMin = bounds.getSouth();
-            const latMax = bounds.getNorth();
-            const lngMin = bounds.getWest();
-            const lngMax = bounds.getEast();
-
-            const zoom = mapInstance.getZoom();
-            let steps = 0.15;
-            if (zoom >= 12) steps = 0.04;
-            else if (zoom >= 11) steps = 0.08;
-            else if (zoom <= 7) steps = 0.5;
-
-            // Generate vectors spanning current viewing coordinates
-            for (let targetLat = Math.floor(latMin * 10) / 10; targetLat <= latMax; targetLat += steps) {
-                for (let targetLng = Math.floor(lngMin * 10) / 10; targetLng <= lngMax; targetLng += steps) {
-                    
-                    let localDir = 45;
-                    let localSpeed = 1.0;
-
-                    if (targetLat >= 24.8 && targetLat <= 25.6 && targetLng >= 121.3 && targetLng <= 122.2) {
-                        localDir = 55; localSpeed = 1.8;
-                    } else if (targetLat >= 22.0 && targetLat <= 25.0 && targetLng >= 119.5 && targetLng <= 121.2) {
-                        localDir = 15; localSpeed = 2.2;
-                    } else if (targetLat >= 23.0 && targetLat <= 23.8 && targetLng >= 119.0 && targetLng <= 119.9) {
-                        localDir = 350; localSpeed = 3.6;
-                    } else if (targetLat >= 22.0 && targetLat <= 24.5 && targetLng >= 122.0 && targetLng <= 124.5) {
-                        localDir = 28; localSpeed = 3.2;
-                    } else {
-                        localDir = Math.round((Math.abs(targetLat * targetLng * 17) % 360));
-                        localSpeed = 0.8;
-                    }
-
-                    const arrowSvg = `
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="transform: rotate(${localDir}deg); transform-origin: center;">
-                            <path d="M12 2L8 8h3v14h2V8h3l-4-6z" fill="#0c4a6e" fill-opacity="${Math.min(localSpeed / 4, 1)}"/>
-                        </svg>
-                    `;
-
-                    const arrowIcon = L.divIcon({
-                        html: arrowSvg,
-                        className: '',
-                        iconSize: [24, 24],
-                        iconAnchor: [12, 12]
-                    });
-
-                    L.marker([targetLat, targetLng], { icon: arrowIcon }).addTo(vectorOverlayLayer);
-                }
-            }
-        }
-
-        // Initialize Chart with Null-Safety Check
+        // Initialize Chart
         function initChart(regionKey) {
-            const canvasElement = document.getElementById('currentsChart');
-            if (!canvasElement) {
-                console.error("Canvas element with ID 'currentsChart' could not be found.");
-                return;
-            }
-
-            const ctx = canvasElement.getContext('2d');
+            const ctx = document.getElementById('currentsChart').getContext('2d');
             const data = regionData[regionKey];
 
             // Calculate Resultant Combined Vector (Base + Tide)
@@ -813,7 +590,7 @@
                         {
                             label: 'Combined Vector (Total Speed)',
                             data: resultantData,
-                            borderColor: '#0c4a6e',
+                            borderColor: '#0c4a6e', // marine-900
                             backgroundColor: 'rgba(12, 74, 110, 0.1)',
                             borderWidth: 3,
                             fill: true,
@@ -823,7 +600,7 @@
                         {
                             label: 'Tidal Stream Component',
                             data: data.tideData,
-                            borderColor: '#94a3b8',
+                            borderColor: '#94a3b8', // slate-400
                             borderWidth: 2,
                             borderDash: [5, 5],
                             fill: false,
@@ -833,7 +610,7 @@
                         {
                             label: 'Ocean Current (Base)',
                             data: data.baseData,
-                            borderColor: '#0284c7',
+                            borderColor: '#0284c7', // sky-600
                             borderWidth: 2,
                             fill: false,
                             tension: 0.1,
@@ -890,6 +667,7 @@
         const regionTabs = document.querySelectorAll('.region-tab');
         regionTabs.forEach(tab => {
             tab.addEventListener('click', (e) => {
+                // Update UI classes
                 regionTabs.forEach(t => {
                     t.classList.remove('border-marine-900', 'text-marine-900', 'bg-white');
                     t.classList.add('border-transparent', 'text-slate-500');
@@ -897,6 +675,7 @@
                 e.target.classList.remove('border-transparent', 'text-slate-500');
                 e.target.classList.add('border-marine-900', 'text-marine-900', 'bg-white');
 
+                // Update Data
                 const region = e.target.getAttribute('data-region');
                 const data = regionData[region];
                 
@@ -906,6 +685,7 @@
                 document.getElementById('stat-tide').textContent = data.tide;
                 document.getElementById('region-takeaway').innerHTML = `<strong>Navigator's Takeaway:</strong> ${data.takeaway}`;
 
+                // Update Chart
                 initChart(region);
             });
         });
@@ -914,8 +694,6 @@
         const timelineContainer = document.getElementById('timeline-container');
         
         function renderTimeline() {
-            if (!timelineContainer) return;
-            timelineContainer.innerHTML = '';
             itineraryData.forEach((leg, index) => {
                 const btn = document.createElement('button');
                 btn.className = `timeline-btn w-full text-left px-4 py-3 rounded-lg border border-sand-200 transition-all font-medium ${index === 0 ? 'active' : 'bg-sand-50 text-slate-600 hover:bg-sand-100'}`;
@@ -925,6 +703,7 @@
                 `;
                 
                 btn.addEventListener('click', () => {
+                    // Update active state
                     document.querySelectorAll('.timeline-btn').forEach(b => {
                         b.classList.remove('active');
                         b.classList.add('bg-sand-50', 'text-slate-600');
@@ -932,6 +711,7 @@
                     btn.classList.remove('bg-sand-50', 'text-slate-600');
                     btn.classList.add('active');
 
+                    // Update Content Panel
                     document.getElementById('leg-dates').textContent = leg.dates;
                     document.getElementById('leg-title').textContent = leg.title;
                     document.getElementById('leg-desc').textContent = leg.desc;
@@ -947,20 +727,112 @@
             });
         }
 
-        // --- GEM NAVIGATOR - A+ AI CHAT LOGIC ---
+        // --- STREAMING_CHUNK:Initializing dual assistant profiles and API payloads... ---
+        // --- GEM NAVIGATORS & LOCAL SKIPPER AI LOGIC ---
+        
+        let currentAssistant = 'navigator';
+        
+        const assistantProfiles = {
+            navigator: {
+                title: "GEM Navigator - A+",
+                avatar: "A+",
+                desc: "Ask about currents, optimal wind angles, harbor approaches, or the Kuroshio crossing vectors for your 2026 campaign.",
+                suggested: [
+                    { text: "⚓ Kuroshio Crossing Strategy", query: "How do I best tackle the Kuroshio current when crossing from Keelung to Ishigaki?" },
+                    { text: "🌪️ Penghu Spring Tide Risks", query: "What are the risks of sailing against a spring tide in the Penghu Channel?" },
+                    { text: "📊 Early June Weather Models", query: "Which weather models are most accurate for the Southwest Monsoon in early June?" }
+                ],
+                greeting: "Welcome aboard, Navigator. I am <strong>GEM Navigator - A+</strong>, your ocean racing tactical consultant.<br><br>How can I help you optimize your transit vector or tactical plan for the upcoming 2026 Keelung & Miyako Cup campaign?",
+                systemPrompt: "You are GEM Navigator - A+, a world-class yacht racing tactical navigator specializing in the hydrodynamics, currents (Kuroshio, Taiwan Strait), and meteorological patterns (Southwest Monsoon, Typhoons) around Taiwan, Hong Kong, and the southern Ryukyu islands (Ishigaki, Miyako). Provide tactical, direct, and authoritative offshore navigation advice. Keep responses highly actionable, structured, and under 3-4 paragraphs. Always use knots for speed and reference local landmarks when appropriate.",
+                externalLink: false
+            },
+            skipper: {
+                title: "Taiwan Skipper GEM",
+                avatar: "🇹🇼",
+                desc: "Get local port wisdom, shelter advice, CIQS processing tips, and coastal navigation secrets directly from a veteran Taiwanese skipper.",
+                suggested: [
+                    { text: "🏮 Keelung Port Entry & Shelter", query: "What are the entry procedures and best shelter spots for a visiting yacht in Keelung Outer Harbour?" },
+                    { text: "🏝️ Penghu Anchorage Secrets", query: "Can you recommend safe, protected anchorages in Penghu during strong winds?" },
+                    { text: "🛂 Taiwan Customs / CIQS Guide", query: "What is the typical CIQS customs clearance process for a yacht returning from Japan to Taiwan?" }
+                ],
+                greeting: "Ahoy! I am the <strong>Taiwan Skipper GEM</strong>. As a local captain, I've sailed every inch of our beautiful coastlines—from the rough waters of the Penghu Channel to the steep cliffs of Hualien.<br><br>How can I help you navigate our ports, find safe anchorage, or deal with local customs and sea conditions?",
+                systemPrompt: "You are Taiwan Skipper GEM, an experienced local sea captain and cruising skipper with intimate knowledge of the coastlines of Taiwan, the Penghu Archipelago, Keelung, Kaohsiung, and local ports. You specialize in local sailing wisdom, safe harbors, shelter bays, customs/CIQS processes for Taiwan, maritime culture, and piloting offshore vessels in Taiwanese waters. Keep responses friendly, practical, safety-focused, and highly informative for incoming foreign cruising yachts. Keep replies under 3-4 paragraphs and mention local customs or landmarks.",
+                externalLink: "https://gemini.google.com/gem/1USNBM0SPQIZCxG5w2co7EisvRgHHCecv?usp=sharing"
+            }
+        };
+
         const chatMessagesContainer = document.getElementById('chat-messages');
         const chatInput = document.getElementById('chat-input');
         const chatForm = document.getElementById('chat-form');
         const chatSubmitBtn = document.getElementById('chat-submit-btn');
 
+        // Switch between assistants
+        window.selectAssistant = function(type) {
+            currentAssistant = type;
+            const profile = assistantProfiles[type];
+            
+            // Update Toggle Button Visuals
+            const navBtn = document.getElementById('toggle-navigator-btn');
+            const skipBtn = document.getElementById('toggle-skipper-btn');
+            
+            if (type === 'navigator') {
+                navBtn.className = "px-5 py-3 rounded-xl text-xs font-bold transition-all shadow-md bg-marine-900 text-white border border-marine-900 focus:outline-none";
+                skipBtn.className = "px-5 py-3 rounded-xl text-xs font-medium transition-all shadow-sm bg-white text-slate-600 border border-sand-200 hover:bg-sand-100 flex items-center gap-1.5 focus:outline-none";
+            } else {
+                navBtn.className = "px-5 py-3 rounded-xl text-xs font-medium transition-all shadow-sm bg-white text-slate-600 border border-sand-200 hover:bg-sand-100 focus:outline-none";
+                skipBtn.className = "px-5 py-3 rounded-xl text-xs font-bold transition-all shadow-md bg-marine-900 text-white border border-marine-900 flex items-center gap-1.5 focus:outline-none";
+            }
+            
+            // Update Sidebar Details
+            document.getElementById('sidebar-title').textContent = profile.title;
+            document.getElementById('sidebar-desc').textContent = profile.desc;
+            
+            const avatarEl = document.getElementById('sidebar-avatar');
+            avatarEl.textContent = profile.avatar;
+            if (type === 'navigator') {
+                avatarEl.className = "w-10 h-10 bg-marine-900 text-white rounded-xl flex items-center justify-center font-bold text-xl shadow-md transition-all";
+            } else {
+                avatarEl.className = "w-10 h-10 bg-amber-500 text-white rounded-xl flex items-center justify-center font-bold text-xl shadow-md transition-all";
+            }
+            
+            // Update Suggested Queries
+            const suggContainer = document.getElementById('suggested-queries-container');
+            suggContainer.innerHTML = '';
+            profile.suggested.forEach(item => {
+                const b = document.createElement('button');
+                b.className = "w-full text-left text-xs bg-white hover:bg-marine-50 hover:text-marine-900 text-slate-700 p-2.5 rounded-lg border border-sand-200 transition-colors shadow-sm block focus:outline-none";
+                b.textContent = item.text;
+                b.onclick = () => sendQuickQuery(item.query);
+                suggContainer.appendChild(b);
+            });
+            
+            // Update Link Container
+            const linkContainer = document.getElementById('external-link-container');
+            const linkEl = document.getElementById('external-gem-link');
+            if (profile.externalLink) {
+                linkEl.href = profile.externalLink;
+                linkContainer.classList.remove('hidden');
+            } else {
+                linkContainer.classList.add('hidden');
+            }
+            
+            // Reset chat history list with the new greeting
+            chatMessagesContainer.innerHTML = '';
+            appendMessage(profile.title, profile.greeting, true);
+        };
+
         function appendMessage(sender, text, isAi = false) {
             if (!chatMessagesContainer) return;
             const wrapper = document.createElement('div');
-            wrapper.className = `flex items-start gap-3 ${sender === 'User' ? 'justify-end' : ''}`;
+            wrapper.className = `flex items-start gap-3 ${!isAi ? 'justify-end' : ''}`;
             
-            const avatar = isAi 
-                ? `<div class="w-8 h-8 rounded-lg bg-marine-900 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">A+</div>`
-                : '';
+            let avatarHtml = '';
+            if (isAi) {
+                const isNav = (currentAssistant === 'navigator');
+                const avatarBg = isNav ? 'bg-marine-900' : 'bg-amber-500';
+                const avatarIcon = isNav ? 'A+' : '🇹🇼';
+                avatarHtml = `<div class="w-8 h-8 rounded-lg ${avatarBg} text-white flex items-center justify-center text-sm font-bold flex-shrink-0 shadow-sm">${avatarIcon}</div>`;
+            }
                 
             const messageBoxClass = isAi 
                 ? 'bg-white border border-sand-200 rounded-2xl rounded-tl-none text-slate-700' 
@@ -974,7 +846,7 @@
                 .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
             wrapper.innerHTML = `
-                ${avatar}
+                ${avatarHtml}
                 <div class="${messageBoxClass} p-4 max-w-[85%] shadow-sm">
                     <p class="text-sm leading-relaxed">${formattedText}</p>
                 </div>
@@ -988,8 +860,13 @@
             const indicator = document.createElement('div');
             indicator.id = 'typing-indicator';
             indicator.className = 'flex items-start gap-3';
+            
+            const isNav = (currentAssistant === 'navigator');
+            const avatarBg = isNav ? 'bg-marine-900' : 'bg-amber-500';
+            const avatarIcon = isNav ? 'A+' : '🇹🇼';
+            
             indicator.innerHTML = `
-                <div class="w-8 h-8 rounded-lg bg-marine-900 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">A+</div>
+                <div class="w-8 h-8 rounded-lg ${avatarBg} text-white flex items-center justify-center text-sm font-bold flex-shrink-0 shadow-sm">${avatarIcon}</div>
                 <div class="bg-white border border-sand-200 rounded-2xl rounded-tl-none p-4 max-w-[85%] shadow-sm">
                     <div class="flex space-x-1.5 items-center h-4">
                         <div class="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0ms"></div>
@@ -1012,7 +889,7 @@
                 chatInput.value = text;
                 chatForm.dispatchEvent(new Event('submit'));
             }
-        }
+        };
 
         window.handleQuerySubmit = async function(event) {
             event.preventDefault();
@@ -1028,14 +905,14 @@
             chatSubmitBtn.classList.add('opacity-50');
 
             try {
-                const systemPrompt = "You are GEM Navigator - A+, a world-class yacht racing tactical navigator specializing in the hydrodynamics, currents (Kuroshio, Taiwan Strait), and meteorological patterns (Southwest Monsoon, Typhoons) around Taiwan, Hong Kong, and the southern Ryukyu islands (Ishigaki, Miyako). Provide tactical, direct, and authoritative offshore navigation advice. Keep responses highly actionable, structured, and under 3-4 paragraphs. Always use knots for speed and reference local landmarks when appropriate.";
+                const activeProfile = assistantProfiles[currentAssistant];
                 const apiKey = ""; 
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
                 const payload = {
                     contents: [{ parts: [{ text: prompt }] }],
                     systemInstruction: {
-                        parts: [{ text: systemPrompt }]
+                        parts: [{ text: activeProfile.systemPrompt }]
                     }
                 };
 
@@ -1061,25 +938,26 @@
                 if (response && response.ok) {
                     const result = await response.json();
                     const aiText = result.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I could not generate a response. Please try again.";
-                    appendMessage('A+', aiText, true);
+                    appendMessage(activeProfile.title, aiText, true);
                 } else {
-                    appendMessage('A+', "Could not connect to the tactical navigation server. Please verify your connection or try again later.", true);
+                    appendMessage(activeProfile.title, "Could not connect to the sailing server. Please verify your connection or try again later.", true);
                 }
             } catch (error) {
                 removeTypingIndicator();
-                appendMessage('A+', "An error occurred while processing your navigation request. Please try again.", true);
+                appendMessage(activeProfile.title, "An error occurred while processing your navigation request. Please try again.", true);
             } finally {
                 chatSubmitBtn.disabled = false;
                 chatSubmitBtn.classList.remove('opacity-50');
             }
         };
 
-        // Safe, Synced Load Trigger
-        window.onload = function () {
-            initChart('north'); // Safe to draw chart now that the window is fully populated
-            renderTimeline();   // Load timeline navigation buttons
-            initTacticalMap();  // Render map canvas safely
-        }
+        // On Load
+        document.addEventListener('DOMContentLoaded', () => {
+            initChart('north');      // Load first chart
+            renderTimeline();        // Load timeline buttons
+            selectAssistant('navigator'); // Initialize chat and toggle states
+        });
+
     </script>
 </body>
 </html>
