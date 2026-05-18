@@ -626,11 +626,14 @@
 
         // Simple geographical landmask to prevent arrows drawing over Taiwan and Mainland China
         function isWater(lat, lng) {
-            // 1. Mainland China Rough Coastline Approximation
+            // 1. Mainland China Coastline Approximation (Expanded HK to Fuzhou)
             // Formula creates a diagonal bounding line. Anything West of it is considered land.
-            if (lng < 116.2 + (lat - 22.0) * 1.05) return false; 
+            if (lng < 113.0 + (lat - 21.0) * 1.25) return false; 
             
-            // 2. Taiwan Main Island Polygon Check
+            // 2. Philippines (Luzon Coast)
+            if (lat < 18.6 && lng > 119.5 && lng < 122.5) return false;
+            
+            // 3. Taiwan Main Island Polygon Check
             const taiwanPolygon = [
                 [25.30, 121.54], [25.13, 121.80], [24.50, 121.85], [23.75, 121.60], 
                 [22.75, 121.15], [21.90, 120.85], [21.90, 120.70], [22.40, 120.35], 
@@ -657,48 +660,70 @@
             const diffMs = targetDate - EPOCH_DATE;
             const hourOffset = diffMs / (1000 * 60 * 60);
 
-            // 1. Base Ocean Current Model
-            const distToKuroshioCore = Math.abs(lng - 122.2);
-            let kuroshioStrength = 3.2 * Math.exp(-distToKuroshioCore * 1.6);
-            if (lng < 121.0) kuroshioStrength *= 0.15; 
+            // 1. Base Ocean Current Model (Kuroshio + Regional)
+            let kuroshioCoreLng = 122.2;
+            let kuroshioAngle = 10;
+            
+            // Model Kuroshio curving NE towards Ryukyu Islands (Ishigaki/Miyako/Naha)
+            if (lat > 25.0) {
+                kuroshioCoreLng = 122.2 + (lat - 25.0) * 1.2;
+                kuroshioAngle = 45; 
+            } else if (lat < 21.0) {
+                // Flows N from Philippines
+                kuroshioCoreLng = 122.5;
+                kuroshioAngle = 355; 
+            }
 
-            let baseSpeed = 0.3; 
-            let baseAngle = 10; 
+            const distToKuroshioCore = Math.abs(lng - kuroshioCoreLng);
+            let kuroshioStrength = 3.2 * Math.exp(-distToKuroshioCore * 1.2);
+            
+            // Shadow of Taiwan blocks Kuroshio in the Strait
+            if (lng < 121.0 && lat > 21.0 && lat < 25.5) kuroshioStrength *= 0.1; 
 
-            if (lng >= 121.6) {
-                baseSpeed = kuroshioStrength + 0.5;
-                baseAngle = 35; 
-            } else if (lng < 121.2 && lat < 25.2) {
-                baseSpeed = 0.4 + (25.2 - lat) * 0.05; 
-                baseAngle = 355; 
+            let baseSpeed = 0.2; 
+            let baseAngle = 45; 
+
+            if (distToKuroshioCore < 3.0 && lng >= 121.0) {
+                baseSpeed = kuroshioStrength + 0.3;
+                baseAngle = kuroshioAngle;
+            } else if (lng < 121.0 && lat < 25.0) {
+                // Taiwan Strait & South China Sea (Summer SW Monsoon drift)
+                baseSpeed = 0.4; 
+                baseAngle = 40; 
+            } else if (lat > 25.0 && lng < 121.0) {
+                // East China Sea shelf
+                baseSpeed = 0.5; 
+                baseAngle = 90; 
             }
 
             // 2. Tidal Stream Model (Semi-diurnal cycle, 12.42h period)
             const distToPenghu = Math.sqrt(Math.pow(lat - 23.5, 2) + Math.pow(lng - 119.6, 2));
-            let maxTideAmp = 1.0;
+            let maxTideAmp = 0.5; // Ocean default
 
-            if (distToPenghu < 1.0) {
+            if (distToPenghu < 1.5) {
                 maxTideAmp = 3.8 * Math.exp(-distToPenghu * 0.9);
-            } else if (lng < 121.0) {
-                maxTideAmp = 2.2;
-            } else {
-                maxTideAmp = 0.5;
+            } else if (lng < 121.0 && lat > 22.0 && lat < 25.5) {
+                maxTideAmp = 2.2; // Taiwan Strait
+            } else if (lng < 116.0 && lat < 23.5) {
+                maxTideAmp = 1.2; // HK / Guangdong coast
             }
 
             const spatialPhaseOffset = (lat * 2.1) - (lng * 1.3);
             const tidalAngleRad = ((hourOffset * 2 * Math.PI) / 12.42) + spatialPhaseOffset;
             const currentTideVal = maxTideAmp * Math.sin(tidalAngleRad);
 
-            // Corrected Tidal Geography Logic
             let tideAngle;
             if (lat >= 25.1 && lng > 121.1 && lng < 122.2) {
                 // North Coast of Taiwan (Keelung area): Tidal streams run roughly East/West
                 tideAngle = (currentTideVal >= 0) ? 270 : 90; // Flood West, Ebb East
+            } else if (lng < 116.0 && lat < 23.5) {
+                // HK area (roughly E/W along coast)
+                tideAngle = (currentTideVal >= 0) ? 100 : 280;
             } else if (lng <= 121.1) {
                 // Taiwan Strait / West Coast: Tides run mostly NNE/SSW
                 tideAngle = (currentTideVal >= 0) ? 20 : 200; 
             } else {
-                // East Coast / Deep Ocean: Tides are weak and roughly N/S
+                // East Coast / Deep Ocean / Ryukyu: Tides are weak and roughly N/S
                 tideAngle = (currentTideVal >= 0) ? 0 : 180;
             }
 
@@ -745,9 +770,8 @@
             const south = bounds.getSouth();
 
             // Increase grid density slightly for better sea coverage
-            const gridCount = 10;
+            const gridCount = 12;
             const latStep = (north - south) / gridCount;
-            const lngStep = (east - east) / gridCount; // Fix: Use width for lngStep
             const lngActualStep = (east - west) / gridCount;
 
             for (let i = 1; i < gridCount; i++) {
@@ -755,8 +779,9 @@
                     const lat = south + i * latStep;
                     const lng = west + j * lngActualStep;
 
-                    // Only compute and draw if over water AND within sensible bounds
-                    if (lat > 21.0 && lat < 27.0 && lng > 117.0 && lng < 125.0) {
+                    // Only compute and draw if over water AND within expanded sensible bounds
+                    // HK (~114E) to Naha (~127E), Luzon (~18N) to Fuzhou (~26N)
+                    if (lat > 18.0 && lat < 28.0 && lng > 113.0 && lng < 129.0) {
                         if (isWater(lat, lng)) {
                             const vector = simulateCombinedVector(lat, lng, currentSimulationDate);
                             const speedVal = parseFloat(vector.speed);
@@ -807,7 +832,8 @@
             const defaultLat = 25.1300;
             const defaultLng = 121.7400;
 
-            map = L.map('copernicus-map', { zoomControl: false }).setView([defaultLat, defaultLng], 8);
+            // Set initial map view slightly zoomed out to showcase broader HK to Okinawa route
+            map = L.map('copernicus-map', { zoomControl: false }).setView([23.5, 120.0], 6);
 
             L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}', {
                 attribution: '&copy; Esri, GEBCO, NOAA',
