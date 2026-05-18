@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taiwan Marine Currents & Sailing Case Study 2026</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        marine: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        sand: {
+                            50: '#fafaf9',
+                            100: '#f5f5f4',
+                            200: '#e7e5e4',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- 
+    Chosen Palette: Marine & Sand. 
+    Backgrounds use warm, calming 'sand' neutrals (bg-sand-50/100) to ensure readability and a clean professional look. 
+    Typography and accents use deep 'marine' blues (marine-800/900) to fit the maritime theme without overwhelming the senses. 
+    -->
+
+    <!-- 
+    Application Structure Plan:
+    1. Header/Hero: Directly answers the user's specific questions regarding combined vectors and update frequencies.
+    2. Regional Analysis Dashboard: An interactive tabbed section detailing the specific areas requested (North Coast, West Coast, Penghu) with a dynamic chart showing the interaction of ocean currents and tidal streams over a 24-hour cycle.
+    3. Expedition Case Study (Interactive Timeline): A chronological walkthrough of the 2026 race itinerary. Clicking through legs updates the central panel with specific navigational advice based on regional currents (Kuroshio, Taiwan Strait).
+    4. References: Web links and sources as requested.
+    *Rationale: This structure separates theoretical/general answers from specific geographical data and chronological planning, allowing the user (likely a navigator or race planner) to find exact answers quickly while also exploring the full context of their upcoming voyage.*
+    -->
+
+    <!-- 
+    Visualization & Content Choices:
+    - Goal: Inform on Vector Concepts -> Presentation: Text + Chart.js Line Graph -> Interaction: Tab switching for regions -> Justification: Shows how constant ocean currents sum with oscillating tidal streams to create a resultant speed.
+    - Goal: Present Itinerary -> Presentation: Interactive Timeline (HTML/Flex) -> Interaction: Clickable dates to reveal leg details -> Justification: Breaks down a complex 3-week race into digestible, focused navigational challenges.
+    - Goal: Area Profiles -> Presentation: Data Cards & Dynamic Chart -> Interaction: Select region to update chart -> Justification: Allows direct comparison of the three requested regions (North, West, Penghu) without clutter.
+    CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. All visual elements are HTML/CSS or Canvas (Chart.js).
+    -->
+
+    <style>
+        /* Chart Container Requirements */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px; /* Constrains extreme width on large screens */
+            margin-left: auto;
+            margin-right: auto;
+            height: 40vh; /* Responsive height */
+            min-height: 300px;
+            max-height: 450px; /* Prevents excessive vertical stretching */
+        }
+        
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Timeline active state */
+        .timeline-btn.active {
+            background-color: #0c4a6e;
+            color: white;
+            border-color: #0c4a6e;
+        }
+    </style>
+</head>
+<body class="bg-sand-50 text-slate-800 font-sans antialiased">
+
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-sand-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-2xl font-bold text-marine-900">&#9973; Taiwan Marine Nav 2026</span>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#core-answers" class="text-sm font-medium hover:text-marine-800 transition-colors">Core Concepts</a>
+                    <a href="#regional-analysis" class="text-sm font-medium hover:text-marine-800 transition-colors">Regional Analysis</a>
+                    <a href="#case-study" class="text-sm font-medium hover:text-marine-800 transition-colors">Race Case Study</a>
+                    <a href="#references" class="text-sm font-medium hover:text-marine-800 transition-colors">References</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-16">
+
+        <!-- Section 1: Core Answers -->
+        <section id="core-answers" class="scroll-mt-20">
+            <div class="bg-white rounded-2xl shadow-sm border border-sand-200 p-8 md:p-12">
+                <h1 class="text-3xl md:text-4xl font-extrabold text-marine-900 mb-6">Marine Currents & Tidal Streams</h1>
+                <p class="text-lg text-slate-600 mb-8 max-w-4xl">
+                    Understanding the interplay between large-scale ocean currents (like the Kuroshio) and local tidal streams is critical for safe and optimal navigation around Taiwan. Below are direct answers to your fundamental queries.
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Answer 1 -->
+                    <div class="bg-marine-50 rounded-xl p-6 border border-marine-100">
+                        <h3 class="text-xl font-bold text-marine-900 mb-3 flex items-center">
+                            <span class="text-2xl mr-2">&#10148;</span> Vector Combination
+                        </h3>
+                        <p class="text-slate-700 font-medium mb-2">Q: Is the speed and direction showing the ocean current a combined vector for ocean current and tidal stream?</p>
+                        <p class="text-slate-600">
+                            <strong>Yes.</strong> Most modern marine forecasting tools (like HYCOM or Copernicus) that display "Total Surface Current" show the <em>kinematic vector sum</em>. 
+                            <br><br>
+                            If an ocean current flows North at 1.5 knots, and the tidal stream is flowing South at 1.0 knots, the combined vector will show North at 0.5 knots. Conversely, when the tide turns North, the combined vector becomes 2.5 knots North.
+                        </p>
+                    </div>
+
+                    <!-- Answer 2 -->
+                    <div class="bg-marine-50 rounded-xl p-6 border border-marine-100">
+                        <h3 class="text-xl font-bold text-marine-900 mb-3 flex items-center">
+                            <span class="text-2xl mr-2">&#8987;</span> Update Frequency
+                        </h3>
+                        <p class="text-slate-700 font-medium mb-2">Q: Is the update frequency enough to show the change of tidal stream?</p>
+                        <p class="text-slate-600">
+                            <strong>Yes, absolutely.</strong> High-resolution numerical models covering the Taiwan coast provide data at an <strong>hourly resolution</strong>. 
+                            <br><br>
+                            Since tides in this region are primarily mixed, dominant semi-diurnal (changing direction approximately every 6 hours), an hourly update frequency is highly capable of capturing the acceleration, peak, and slack water phases of the tidal streams.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Regional Analysis -->
+        <section id="regional-analysis" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold text-marine-900 mb-4">Regional Area Analysis (5-10 NM Offshore)</h2>
+            <p class="text-lg text-slate-600 mb-8 max-w-4xl">
+                The waters surrounding Taiwan present vastly different hydrodynamic profiles. Select a region below to understand how the baseline ocean current interacts with local tidal streams over a simulated 24-hour cycle. <em>(Note: Speeds are in Knots).</em>
+            </p>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-sand-200 overflow-hidden">
+                <!-- Tabs -->
+                <div class="flex flex-wrap border-b border-sand-200 bg-sand-50" id="region-tabs">
+                    <button class="region-tab flex-1 py-4 px-6 text-center font-bold text-marine-900 border-b-2 border-marine-900 bg-white" data-region="north">
+                        North Coast (Keelung)
+                    </button>
+                    <button class="region-tab flex-1 py-4 px-6 text-center font-medium text-slate-500 hover:text-marine-800 border-b-2 border-transparent transition-colors" data-region="west">
+                        West Coast (Taiwan St.)
+                    </button>
+                    <button class="region-tab flex-1 py-4 px-6 text-center font-medium text-slate-500 hover:text-marine-800 border-b-2 border-transparent transition-colors" data-region="penghu">
+                        Penghu Area
+                    </button>
+                </div>
+
+                <div class="p-6 md:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Text Info -->
+                    <div class="lg:col-span-1 space-y-6">
+                        <div>
+                            <h3 id="region-title" class="text-2xl font-bold text-marine-900">5-10 NM North of Taiwan Coast</h3>
+                            <p id="region-desc" class="mt-3 text-slate-600">
+                                This area is characterized by the interaction between the East China Sea shelf waters and a branch of the powerful Kuroshio current. Tides are generally moderate, but the underlying ocean current creates a consistent bias.
+                            </p>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-sand-50 p-4 rounded-lg border border-sand-200 text-center">
+                                <span class="block text-sm text-slate-500 uppercase tracking-wide">Base Ocean Current</span>
+                                <span id="stat-base" class="block text-2xl font-bold text-marine-800 mt-1">~0.5 - 1.0 kts</span>
+                            </div>
+                            <div class="bg-sand-50 p-4 rounded-lg border border-sand-200 text-center">
+                                <span class="block text-sm text-slate-500 uppercase tracking-wide">Max Tidal Stream</span>
+                                <span id="stat-tide" class="block text-2xl font-bold text-marine-800 mt-1">±1.5 kts</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mt-4">
+                            <p id="region-takeaway" class="text-sm text-blue-900">
+                                <strong>Navigator's Takeaway:</strong> Pay attention to the ebb/flood cycle. When the tide flows against the Kuroshio branch, expect choppy seas.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Chart -->
+                    <div class="lg:col-span-2 flex flex-col justify-center">
+                        <div class="mb-2 text-center text-sm text-slate-500 font-medium">
+                            Simulated Combined Current Speed Vector (Knots) over 24 Hours
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="currentsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Expedition Case Study -->
+        <section id="case-study" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold text-marine-900 mb-4">Itinerary Case Study: May 30 – June 20, 2026</h2>
+            <p class="text-lg text-slate-600 mb-8 max-w-4xl">
+                Select a leg of the journey to review specific oceanographic conditions, risks, and tactical recommendations based on your dates.
+            </p>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-sand-200">
+                
+                <!-- Timeline Navigation -->
+                <div class="lg:col-span-4 flex flex-col space-y-2 border-r-0 lg:border-r border-sand-200 pr-0 lg:pr-6" id="timeline-container">
+                    <!-- Buttons injected via JS -->
+                </div>
+
+                <!-- Leg Details Panel -->
+                <div class="lg:col-span-8 flex flex-col justify-start">
+                    <div id="leg-content" class="h-full flex flex-col">
+                        <div class="mb-4">
+                            <span id="leg-dates" class="inline-block px-3 py-1 bg-marine-100 text-marine-900 text-sm font-bold rounded-full mb-3">
+                                May 30 – June 4, 2026
+                            </span>
+                            <h3 id="leg-title" class="text-2xl md:text-3xl font-bold text-slate-800">
+                                Delivery: Hong Kong to Keelung
+                            </h3>
+                        </div>
+                        
+                        <div class="prose prose-slate max-w-none text-slate-600 space-y-4">
+                            <p id="leg-desc" class="text-lg">
+                                Sailing northeast through the Taiwan Strait. In early June, the southwest monsoon begins to establish, generally creating a favorable northward surface current.
+                            </p>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                                <div class="bg-sand-50 p-5 rounded-xl border border-sand-200">
+                                    <h4 class="font-bold text-marine-900 mb-2 flex items-center">
+                                        <span class="mr-2 text-xl">&#9888;</span> Key Hazards
+                                    </h4>
+                                    <ul id="leg-hazards" class="list-disc pl-5 space-y-1 text-sm">
+                                        <li>High commercial traffic in the Strait.</li>
+                                        <li>Squalls associated with the transitioning monsoon season.</li>
+                                        <li>Strong local tidal streams accelerating around headlands.</li>
+                                    </ul>
+                                </div>
+                                <div class="bg-marine-50 p-5 rounded-xl border border-marine-100">
+                                    <h4 class="font-bold text-marine-900 mb-2 flex items-center">
+                                        <span class="mr-2 text-xl">&#128208;</span> Current Strategy
+                                    </h4>
+                                    <ul id="leg-strategy" class="list-disc pl-5 space-y-1 text-sm">
+                                        <li>Stay slightly offshore (West coast) to ride the prevailing northward current.</li>
+                                        <li>Time the rounding of the northern cape (Fuguijiao) with a favorable tidal stream.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Section 4: References -->
+        <section id="references" class="scroll-mt-20 pb-12">
+            <h2 class="text-2xl font-bold text-marine-900 mb-6">Authoritative Data Sources & References</h2>
+            <div class="bg-white rounded-2xl shadow-sm border border-sand-200 p-6 md:p-8">
+                <ul class="space-y-4 text-slate-600">
+                    <li class="flex items-start">
+                        <span class="text-marine-800 mr-3 text-xl">&#128279;</span>
+                        <div>
+                            <a href="https://www.cwa.gov.tw/eng/" target="_blank" class="text-marine-800 font-bold hover:underline block">Taiwan Central Weather Administration (CWA) - Marine Forecast</a>
+                            <p class="text-sm mt-1">Provides high-resolution local model data (hourly updates) for tidal streams and wave heights directly around Taiwan, Penghu, and Keelung.</p>
+                        </div>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-marine-800 mr-3 text-xl">&#128279;</span>
+                        <div>
+                            <a href="https://marine.copernicus.eu/" target="_blank" class="text-marine-800 font-bold hover:underline block">Copernicus Marine Service</a>
+                            <p class="text-sm mt-1">Global and regional ocean physical analysis and forecasting. Excellent for observing the larger Kuroshio vector before it combines with local tides.</p>
+                        </div>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-marine-800 mr-3 text-xl">&#128279;</span>
+                        <div>
+                            <a href="https://www.windy.com/-Ocean-currents-currents" target="_blank" class="text-marine-800 font-bold hover:underline block">Windy.com - Ocean Currents Overlay</a>
+                            <p class="text-sm mt-1">A highly accessible visualization tool that integrates various models (like ECMWF) to show the kinematic vector sum of currents and tides on an hourly basis.</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-marine-900 text-white py-8 text-center text-sm">
+        <p>&copy; 2026 Navigation Briefing - Prepared for Taiwan Keelung & Miyako Cup Expedition.</p>
+    </footer>
+
+    <!-- Application Logic -->
+    <script>
+        // --- DATA STORAGE ---
+        
+        // Regional Analysis Data (Simulated 24h data in Knots)
+        const regionData = {
+            north: {
+                title: "5-10 NM North of Taiwan Coast",
+                desc: "Characterized by the interaction between East China Sea shelf waters and the Kuroshio. Tides are generally moderate (semi-diurnal), but the underlying ocean current creates a consistent bias.",
+                base: "0.5 - 1.0 kts (Eastward)",
+                tide: "±1.5 kts",
+                takeaway: "Pay attention to the ebb/flood cycle. The combined vector rarely drops to zero, usually maintaining an eastward push even during opposing tides.",
+                labels: ['00:00','02:00','04:00','06:00','08:00','10:00','12:00','14:00','16:00','18:00','20:00','22:00','24:00'],
+                baseData: [0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8],
+                tideData: [0, 1.0, 1.5, 0.8, -0.5, -1.2, -1.5, -0.8, 0.2, 1.2, 1.4, 0.5, 0],
+                // Resultant = base + tide (simplified 1D vector addition for demonstration)
+            },
+            west: {
+                title: "5-10 NM West of Taiwan Coast",
+                desc: "Located in the Taiwan Strait. This area is highly tidally dominated. While there is a seasonal drift current (northward in summer), the instantaneous speed is almost entirely dictated by tidal streams.",
+                base: "0.2 - 0.5 kts (Northward)",
+                tide: "±2.5 kts (Spring)",
+                takeaway: "Tidal gates are crucial. Fighting a foul tide here means facing a 2-3 knot head current. Always aim to transit with the tide.",
+                labels: ['00:00','02:00','04:00','06:00','08:00','10:00','12:00','14:00','16:00','18:00','20:00','22:00','24:00'],
+                baseData: [0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3],
+                tideData: [1.0, 2.5, 1.8, 0, -1.8, -2.4, -1.2, 0.5, 2.2, 2.0, 0.2, -1.5, -2.0],
+            },
+            penghu: {
+                title: "Area Around Penghu Island",
+                desc: "The Penghu Channel acts as a major funnel for tidal movement in the strait. Currents here are extreme, creating heavy turbulence, overfalls, and rips, especially against wind.",
+                base: "0.5 kts (Northward)",
+                tide: "±4.0 kts (Spring)",
+                takeaway: "Extremely dangerous in wind-against-tide conditions. The vector here changes rapidly. An hourly update frequency is mandatory for safe passage planning.",
+                labels: ['00:00','02:00','04:00','06:00','08:00','10:00','12:00','14:00','16:00','18:00','20:00','22:00','24:00'],
+                baseData: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
+                tideData: [2.0, 4.0, 2.5, -1.0, -3.5, -4.0, -1.5, 2.0, 3.8, 2.5, -0.5, -3.0, -3.5],
+            }
+        };
+
+        // Itinerary Data
+        const itineraryData = [
+            {
+                id: "leg-1",
+                dates: "May 30 – June 4",
+                title: "Delivery: HK to Keelung",
+                desc: "Sailing northeast through the Taiwan Strait. In early June, the southwest monsoon begins to establish, generally creating a favorable northward surface current. The optimal departure window opens May 30.",
+                hazards: [
+                    "High commercial shipping traffic in the Strait.",
+                    "Squalls associated with the transitioning monsoon season.",
+                    "Strong local tidal streams accelerating around coastal headlands (West Coast)."
+                ],
+                strategy: [
+                    "Stay slightly offshore (5-10 NM) to ride the prevailing northward summer current.",
+                    "Time the rounding of the northern cape (Fuguijiao) with a favorable eastbound tidal stream.",
+                    "Ensure arrival before the June 5 mandatory check-in deadline."
+                ]
+            },
+            {
+                id: "leg-2",
+                dates: "June 5 – 7",
+                title: "Keelung Race Segment",
+                desc: "Inshore and coastal racing around the North Coast. This area features complex interactions between the coastal shelf and the edges of the Kuroshio.",
+                hazards: [
+                    "Variable local eddies created by the rugged coastline.",
+                    "Tidal rips near prominent points and harbor entrances."
+                ],
+                strategy: [
+                    "Rely heavily on hourly tidal models (CWA data).",
+                    "Seek current relief near the shore during adverse flood tides."
+                ]
+            },
+            {
+                id: "leg-3",
+                dates: "June 8 – 9",
+                title: "Race 2: Keelung to Ishigaki",
+                desc: "The critical Kuroshio Crossing. You will be crossing one of the world's strongest ocean currents, which flows steadily northward at 2 to 4 knots.",
+                hazards: [
+                    "Massive cross-track error (Northerly set) if the current is not compensated for.",
+                    "Extremely steep and dangerous seas if a Northerly wind opposes the Kuroshio."
+                ],
+                strategy: [
+                    "Aim significantly south of the rhumb line initially to account for the relentless northward push.",
+                    "The combined vector will be almost entirely dominated by the Kuroshio; tidal influence drops drastically offshore."
+                ]
+            },
+            {
+                id: "leg-4",
+                dates: "June 10 – 13",
+                title: "Ishigaki to Miyako & Miyako Cup",
+                desc: "Lay day processing in Ishigaki on the 10th. Racing to Miyako (11-12th) and participating in the Cup (13th).",
+                hazards: [
+                    "Coral reefs and complex inshore bathymetry around the Ryukyu Islands.",
+                    "Tidal streams funnelling between the island chains."
+                ],
+                strategy: [
+                    "Currents are generally lighter and more variable here than the main Kuroshio stream.",
+                    "Focus shifts to wind strategy and local tidal gates between islands."
+                ]
+            },
+            {
+                id: "leg-5",
+                dates: "June 14 – 19",
+                title: "Return: Miyako to HK (via Penghu)",
+                desc: "The return delivery. You will cross the Kuroshio again, this time likely getting pushed North while aiming West/Southwest. A contingency stopover in Penghu is planned.",
+                hazards: [
+                    "Re-crossing the Kuroshio (requires Southerly compensation).",
+                    "Navigating the Penghu area: Expect extreme tidal vectors (up to 4+ knots) and severe turbulence in the channels.",
+                    "Potential head current in the Taiwan Strait if the summer northward drift is fully established."
+                ],
+                strategy: [
+                    "Use the Penghu stopover to time your exit into the Taiwan Strait with a strong ebb (Southward) tide.",
+                    "Arrive in HK before the firm deadline of June 20."
+                ]
+            }
+        ];
+
+        // --- STATE & INITIALIZATION ---
+        
+        let currentChartInstance = null;
+
+        // Initialize Chart
+        function initChart(regionKey) {
+            const ctx = document.getElementById('currentsChart').getContext('2d');
+            const data = regionData[regionKey];
+
+            // Calculate Resultant Combined Vector (Base + Tide)
+            const resultantData = data.baseData.map((val, idx) => val + data.tideData[idx]);
+
+            if (currentChartInstance) {
+                currentChartInstance.destroy();
+            }
+
+            currentChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [
+                        {
+                            label: 'Combined Vector (Total Speed)',
+                            data: resultantData,
+                            borderColor: '#0c4a6e', // marine-900
+                            backgroundColor: 'rgba(12, 74, 110, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 4
+                        },
+                        {
+                            label: 'Tidal Stream Component',
+                            data: data.tideData,
+                            borderColor: '#94a3b8', // slate-400
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0.4,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'Ocean Current (Base)',
+                            data: data.baseData,
+                            borderColor: '#0284c7', // sky-600
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.1,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, // Critical for container responsiveness
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + ' kts';
+                                }
+                            }
+                        },
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                boxWidth: 8
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Velocity (Knots)'
+                            },
+                            grid: {
+                                color: '#e7e5e4'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- INTERACTION LOGIC ---
+
+        // Region Tabs Logic
+        const regionTabs = document.querySelectorAll('.region-tab');
+        regionTabs.forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                // Update UI classes
+                regionTabs.forEach(t => {
+                    t.classList.remove('border-marine-900', 'text-marine-900', 'bg-white');
+                    t.classList.add('border-transparent', 'text-slate-500');
+                });
+                e.target.classList.remove('border-transparent', 'text-slate-500');
+                e.target.classList.add('border-marine-900', 'text-marine-900', 'bg-white');
+
+                // Update Data
+                const region = e.target.getAttribute('data-region');
+                const data = regionData[region];
+                
+                document.getElementById('region-title').textContent = data.title;
+                document.getElementById('region-desc').textContent = data.desc;
+                document.getElementById('stat-base').textContent = data.base;
+                document.getElementById('stat-tide').textContent = data.tide;
+                document.getElementById('region-takeaway').innerHTML = `<strong>Navigator's Takeaway:</strong> ${data.takeaway}`;
+
+                // Update Chart
+                initChart(region);
+            });
+        });
+
+        // Itinerary Timeline Logic
+        const timelineContainer = document.getElementById('timeline-container');
+        
+        function renderTimeline() {
+            itineraryData.forEach((leg, index) => {
+                const btn = document.createElement('button');
+                btn.className = `timeline-btn w-full text-left px-4 py-3 rounded-lg border border-sand-200 transition-all font-medium ${index === 0 ? 'active' : 'bg-sand-50 text-slate-600 hover:bg-sand-100'}`;
+                btn.innerHTML = `
+                    <div class="text-xs font-bold uppercase tracking-wide opacity-80 mb-1">${leg.dates}</div>
+                    <div class="text-sm">${leg.title.split(':')[0]}</div>
+                `;
+                
+                btn.addEventListener('click', () => {
+                    // Update active state
+                    document.querySelectorAll('.timeline-btn').forEach(b => {
+                        b.classList.remove('active');
+                        b.classList.add('bg-sand-50', 'text-slate-600');
+                    });
+                    btn.classList.remove('bg-sand-50', 'text-slate-600');
+                    btn.classList.add('active');
+
+                    // Update Content Panel
+                    document.getElementById('leg-dates').textContent = leg.dates;
+                    document.getElementById('leg-title').textContent = leg.title;
+                    document.getElementById('leg-desc').textContent = leg.desc;
+                    
+                    const hazardList = document.getElementById('leg-hazards');
+                    hazardList.innerHTML = leg.hazards.map(h => `<li>${h}</li>`).join('');
+                    
+                    const strategyList = document.getElementById('leg-strategy');
+                    strategyList.innerHTML = leg.strategy.map(s => `<li>${s}</li>`).join('');
+                });
+                
+                timelineContainer.appendChild(btn);
+            });
+        }
+
+        // On Load
+        document.addEventListener('DOMContentLoaded', () => {
+            initChart('north'); // Load first chart
+            renderTimeline();   // Load timeline buttons
+        });
+
+    </script>
+</body>
+</html>
