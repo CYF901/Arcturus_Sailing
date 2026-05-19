@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Taiwan Marine Currents & Tide</title>
+    <title>Taiwan Marine Currents & Sailing Case Study 2026</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -216,12 +216,20 @@
                     </div>
 
                     <!-- Bottom Row: 3-Layer Selector -->
-                    <div>
+                    <div class="space-y-3">
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Active Map Layer</label>
                         <div class="flex flex-col sm:flex-row w-full rounded-lg shadow-sm border border-slate-300 overflow-hidden" id="layer-controls">
                             <button class="layer-btn active flex-1 py-3 text-sm font-bold bg-white text-slate-600 sm:border-r border-b sm:border-b-0 border-slate-300" data-layer="combined">Combined Vector</button>
                             <button class="layer-btn flex-1 py-3 text-sm font-bold bg-white text-slate-600 sm:border-r border-b sm:border-b-0 border-slate-300" data-layer="ocean">Ocean Current Only</button>
                             <button class="layer-btn flex-1 py-3 text-sm font-bold bg-white text-slate-600" data-layer="tide">Tidal Stream Only (M2+S2)</button>
+                        </div>
+                        
+                        <!-- High Contrast Seasonal & Tidal Info Reminder Panel -->
+                        <div class="bg-marine-50 border border-marine-100 p-3 rounded-lg flex items-start space-x-2.5">
+                            <span class="text-marine-800 text-lg leading-none mt-0.5">ℹ️</span>
+                            <p class="text-xs text-marine-900 leading-relaxed font-medium">
+                                <span class="font-bold">Temporal and Seasonal Validity Reminder:</span> The astronomical <span class="underline decoration-dotted font-bold">Tidal Stream</span> layer runs on a gravitational harmonic cycle and remains <span class="text-emerald-700 font-bold">valid year-round</span>. However, the static background <span class="underline decoration-dotted font-bold">Ocean Current</span> baseline modeling the Kuroshio and Taiwan Strait drift is calibrated specifically for the <span class="text-amber-700 font-bold">Summer Monsoon season (late May through August)</span>.
+                            </p>
                         </div>
                     </div>
 
@@ -358,6 +366,7 @@
                 return { u: speed * Math.sin(rad), v: speed * Math.cos(rad) };
             }
 
+            // IDW Interpolation Function for Ocean (Constant over time)
             function getOceanUV(lat, lng) {
                 let sumU = 0, sumV = 0, sumW = 0;
                 for (let a of OCEAN_ANCHORS) {
@@ -372,6 +381,7 @@
                 return { u: sumU / sumW, v: sumV / sumW };
             }
 
+            // Harmonic Zonal IDW Interpolation for Tides (Time-dependent)
             function getTideUV(lat, lng, timeMs) {
                 const hours = (timeMs - epochRef) / (1000 * 60 * 60);
                 const wM2 = (2 * Math.PI) / 12.42;
@@ -396,6 +406,7 @@
                 return { u: sumU / sumW, v: sumV / sumW };
             }
 
+            // Calculate Combined Vector based on Layer State
             function getVectorAt(lat, lng, timeMs) {
                 const ocean = getOceanUV(lat, lng);
                 const tide = getTideUV(lat, lng, timeMs);
