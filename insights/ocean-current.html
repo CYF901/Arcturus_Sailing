@@ -121,9 +121,9 @@
                         </div>
                         <p class="text-slate-600 text-sm mb-4">Your world-class offshore yacht racing tactical officer. Ask it about crossing vectors, Gulf Stream/Kuroshio compensation, and weather routing strategies.</p>
                     </div>
-                    <a href="https://gemini.google.com/gem/1mPbOSIf28lfK3gRCYbjd5aMViwBTAHGn?usp=sharing" target="_blank" class="block w-full text-center bg-marine-800 hover:bg-marine-900 text-white font-medium py-3 rounded-xl transition-colors">
+                    <button onclick="openGemini(event, 'https://gemini.google.com/gem/1mPbOSIf28lfK3gRCYbjd5aMViwBTAHGn?usp=sharing')" class="block w-full text-center bg-marine-800 hover:bg-marine-900 text-white font-medium py-3 rounded-xl transition-colors">
                         Launch GEM Navigator &#8599;
-                    </a>
+                    </button>
                 </div>
 
                 <!-- Skipper GEM -->
@@ -135,9 +135,9 @@
                         </div>
                         <p class="text-slate-600 text-sm mb-4">The local veteran cruising captain. Specialized in harbor approaches, remote anchorage holding grounds, typhoon hole protocols, and complex Taiwan CIQS customs procedures.</p>
                     </div>
-                    <a href="https://gemini.google.com/gem/1USNBM0SPQIZCxG5w2co7EisvRgHHCecv?usp=sharing" target="_blank" class="block w-full text-center bg-slate-800 hover:bg-slate-900 text-white font-medium py-3 rounded-xl transition-colors">
+                    <button onclick="openGemini(event, 'https://gemini.google.com/gem/1USNBM0SPQIZCxG5w2co7EisvRgHHCecv?usp=sharing')" class="block w-full text-center bg-slate-800 hover:bg-slate-900 text-white font-medium py-3 rounded-xl transition-colors">
                         Launch Taiwan Skipper &#8599;
-                    </a>
+                    </button>
                 </div>
             </div>
         </section>
@@ -245,6 +245,58 @@
                     Accessible visualization tool combining multiple global hydrodynamic models.
                 </li>
             </ul>
+        </section>
+
+        <!-- SECTION: Expedition Case Study -->
+        <section id="case-study" class="border-t border-sand-200 pt-8 pb-12 scroll-mt-20">
+            <h2 class="text-3xl font-extrabold text-marine-900 mb-4">Itinerary Case Study: May 30 – June 20, 2026</h2>
+            <p class="text-lg text-slate-600 mb-8 max-w-4xl">
+                Select a leg of the journey to review specific oceanographic conditions, risks, and tactical recommendations based on your dates.
+            </p>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-sand-200">
+                <!-- Timeline Navigation -->
+                <div class="lg:col-span-4 flex flex-col space-y-2 border-r-0 lg:border-r border-sand-200 pr-0 lg:pr-6" id="timeline-container">
+                    <!-- Buttons injected via JS -->
+                </div>
+
+                <!-- Leg Details Panel -->
+                <div class="lg:col-span-8 flex flex-col justify-start">
+                    <div id="leg-content" class="h-full flex flex-col">
+                        <div class="mb-4">
+                            <span id="leg-dates" class="inline-block px-3 py-1 bg-marine-100 text-marine-900 text-sm font-bold rounded-full mb-3">
+                                Select a leg
+                            </span>
+                            <h3 id="leg-title" class="text-2xl md:text-3xl font-bold text-slate-800">
+                                Route Details
+                            </h3>
+                        </div>
+                        
+                        <div class="prose prose-slate max-w-none text-slate-600 space-y-4">
+                            <p id="leg-desc" class="text-lg">
+                                Click a segment on the left timeline to view detailed hydrographic analysis for that portion of the race.
+                            </p>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                                <div class="bg-sand-50 p-5 rounded-xl border border-sand-200">
+                                    <h4 class="font-bold text-marine-900 mb-2 flex items-center">
+                                        <span class="mr-2 text-xl">&#9888;</span> Key Hazards
+                                    </h4>
+                                    <ul id="leg-hazards" class="list-disc pl-5 space-y-1 text-sm">
+                                    </ul>
+                                </div>
+                                <div class="bg-marine-50 p-5 rounded-xl border border-marine-100">
+                                    <h4 class="font-bold text-marine-900 mb-2 flex items-center">
+                                        <span class="mr-2 text-xl">&#128208;</span> Current Strategy
+                                    </h4>
+                                    <ul id="leg-strategy" class="list-disc pl-5 space-y-1 text-sm">
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </section>
 
     </main>
@@ -369,11 +421,20 @@
 
             // Landmask logic
             function isWater(lat, lng) {
-                if (lng < 118 && lat > 22) return false; 
-                if (lng < 120 && lat > 24) return false; 
-                if (lng < 122 && lat > 27) return false; 
-                if (lat > 22.0 && lat < 25.3 && lng > 120.2 && lng < 122.0) return false; 
-                if (lat < 18.5 && lng > 120 && lng < 122.5) return false;
+                // Mainland China roughly (diagonal slice to prevent chopping off coastal arrows)
+                let chinaCoastLng = 114.5 + (lat - 22.0) * 1.2;
+                if (lng < chinaCoastLng) return false;
+
+                // Taiwan main island bounding box with diagonal cuts matching the east coast tilt
+                if (lat > 21.8 && lat < 25.3) {
+                    let westCoast = 120.1 + (lat - 21.8) * 0.2; 
+                    let eastCoast = 120.9 + (lat - 21.8) * 0.35;
+                    if (lng > westCoast && lng < eastCoast) return false;
+                }
+
+                // Northern Luzon
+                if (lat < 18.6 && lng > 120.0 && lng < 122.3) return false;
+
                 return true;
             }
 
@@ -384,6 +445,93 @@
                 const d = Math.floor(absDeg);
                 const m = ((absDeg - d) * 60).toFixed(4);
                 return `${d}° ${m.padStart(7, '0')}' ${dir}`;
+            }
+
+            // --- MOBILE DEEP LINK HANDLER ---
+            window.openGemini = function(event, url) {
+                event.preventDefault();
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                if (isMobile) {
+                    // On mobile, native OS App Links are triggered via direct location change
+                    window.location.href = url;
+                } else {
+                    // Desktop fallback
+                    window.open(url, '_blank');
+                }
+            };
+
+            // --- ITINERARY CASE STUDY DATA ---
+            const itineraryData = [
+                {
+                    dates: "May 30 – June 4, 2026",
+                    title: "Delivery: HK to Keelung",
+                    desc: "Sailing northeast through the Taiwan Strait. In early June, the southwest monsoon begins to establish, generally creating a favorable northward surface current. The optimal departure window opens May 30.",
+                    hazards: ["High commercial shipping traffic in the Strait.", "Squalls associated with the transitioning monsoon season.", "Strong local tidal streams accelerating around coastal headlands."],
+                    strategy: ["Stay slightly offshore (5-10 NM) to ride the prevailing northward summer current.", "Time the rounding of the northern cape (Fuguijiao) with a favorable eastbound tidal stream.", "Ensure arrival before the June 5 mandatory check-in deadline."]
+                },
+                {
+                    dates: "June 5 – 7, 2026",
+                    title: "Keelung Race Segment",
+                    desc: "Inshore and coastal racing around the North Coast. This area features complex interactions between the coastal shelf and the edges of the Kuroshio.",
+                    hazards: ["Variable local eddies created by the rugged coastline.", "Tidal rips near prominent points and harbor entrances."],
+                    strategy: ["Rely heavily on hourly tidal models (CWA data).", "Seek current relief near the shore during adverse flood tides."]
+                },
+                {
+                    dates: "June 8 – 9, 2026",
+                    title: "Race 2: Keelung to Ishigaki",
+                    desc: "The critical Kuroshio Crossing. You will be crossing one of the world's strongest ocean currents, which flows steadily northward at 2 to 4 knots.",
+                    hazards: ["Massive cross-track error (Northerly set) if the current is not compensated for.", "Extremely steep and dangerous seas if a Northerly wind opposes the Kuroshio."],
+                    strategy: ["Aim significantly south of the rhumb line initially to account for the relentless northward push.", "The combined vector will be almost entirely dominated by the Kuroshio; tidal influence drops drastically offshore."]
+                },
+                {
+                    dates: "June 10 – 13, 2026",
+                    title: "Ishigaki to Miyako & Miyako Cup",
+                    desc: "Lay day processing in Ishigaki on the 10th. Racing to Miyako (11-12th) and participating in the Cup (13th).",
+                    hazards: ["Coral reefs and complex inshore bathymetry around the Ryukyu Islands.", "Tidal streams funnelling between the island chains."],
+                    strategy: ["Currents are generally lighter and more variable here than the main Kuroshio stream.", "Focus shifts to wind strategy and local tidal gates between islands."]
+                },
+                {
+                    dates: "June 14 – 19, 2026",
+                    title: "Return: Miyako to HK",
+                    desc: "The return delivery. You will cross the Kuroshio again, this time likely getting pushed North while aiming West/Southwest. A contingency stopover in Penghu is planned.",
+                    hazards: ["Re-crossing the Kuroshio (requires Southerly compensation).", "Navigating the Penghu area: Expect extreme tidal vectors (up to 4+ knots) and severe turbulence in the channels.", "Potential head current in the Taiwan Strait if the summer northward drift is fully established."],
+                    strategy: ["Use the Penghu stopover to time your exit into the Taiwan Strait with a strong ebb (Southward) tide.", "Arrive in HK before the firm deadline of June 20."]
+                }
+            ];
+
+            function renderTimeline() {
+                const timelineContainer = document.getElementById('timeline-container');
+                if(!timelineContainer) return;
+                
+                itineraryData.forEach((leg, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = `timeline-btn w-full text-left px-4 py-3 rounded-lg border border-sand-200 transition-all font-medium ${index === 0 ? 'bg-marine-800 text-white' : 'bg-sand-50 text-slate-600 hover:bg-sand-100'}`;
+                    btn.innerHTML = `
+                        <div class="text-xs font-bold uppercase tracking-wide opacity-80 mb-1">${leg.dates}</div>
+                        <div class="text-sm">${leg.title.split(':')[0]}</div>
+                    `;
+                    
+                    btn.addEventListener('click', () => {
+                        document.querySelectorAll('.timeline-btn').forEach(b => {
+                            b.className = 'timeline-btn w-full text-left px-4 py-3 rounded-lg border border-sand-200 transition-all font-medium bg-sand-50 text-slate-600 hover:bg-sand-100';
+                        });
+                        btn.className = 'timeline-btn w-full text-left px-4 py-3 rounded-lg border border-sand-200 transition-all font-medium bg-marine-800 text-white';
+
+                        document.getElementById('leg-dates').textContent = leg.dates;
+                        document.getElementById('leg-title').textContent = leg.title;
+                        document.getElementById('leg-desc').textContent = leg.desc;
+                        
+                        document.getElementById('leg-hazards').innerHTML = leg.hazards.map(h => `<li>${h}</li>`).join('');
+                        document.getElementById('leg-strategy').innerHTML = leg.strategy.map(s => `<li>${s}</li>`).join('');
+                    });
+                    
+                    timelineContainer.appendChild(btn);
+                });
+                
+                // Initialize first tab
+                if(itineraryData.length > 0) {
+                    timelineContainer.children[0].click();
+                }
             }
 
             // --- 3. UI RENDERING & LEAFLET INITIALIZATION ---
@@ -590,6 +738,7 @@
             });
 
             initMap();
+            renderTimeline();
         };
     </script>
 </body>
