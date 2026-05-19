@@ -31,16 +31,16 @@
     <style>
         html { scroll-behavior: smooth; }
         
-        /* Map Container Setup for Mobile-First Readability */
+        /* Map Container Setup */
         #copernicus-map {
             width: 100%;
-            height: 50vh;
-            min-height: 350px;
+            height: 55vh;
+            min-height: 400px;
             z-index: 10;
-            background-color: #020617; /* Dark ocean fallback */
+            background-color: #0f172a; /* Dark background matching the tiles */
         }
         @media (min-width: 1024px) {
-            #copernicus-map { height: 60vh; min-height: 500px; }
+            #copernicus-map { height: 65vh; min-height: 500px; }
         }
 
         /* Custom Vector Icon Classes */
@@ -56,6 +56,8 @@
             display: block;
             width: 100%;
             height: 100%;
+            /* Adds a dark halo around the bright arrows to make them pop even more */
+            filter: drop-shadow(0px 0px 2px rgba(0,0,0,0.9)); 
         }
         
         /* Interactive Toggle Styles */
@@ -71,28 +73,20 @@
             background: #0c4a6e; cursor: pointer; margin-top: -8px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
         input[type=range]::-webkit-slider-runnable-track {
-            width: 100%; height: 6px; cursor: pointer; background: #e2e8f0; border-radius: 3px;
+            width: 100%; height: 6px; cursor: pointer; background: #cbd5e1; border-radius: 3px;
         }
     </style>
-
-    <!-- 
-    Application Structure Plan:
-    1. Mandatory Disclaimer Banner.
-    2. GEM AI Launchpad: Quick access cards pointing to the customized Google Gemini instances.
-    3. 3-Layer Tactical Dashboard (Mobile First):
-       - Top: Date/Time settings (Input box, Slider, +/- buttons).
-       - Middle: 3-Layer Selector (Combined, Ocean, Tide).
-       - Map: Leaflet implementation displaying the IDW calculated vector arrows.
-       - Bottom: Readout dashboard specifically bound to the GPS teardrop pin.
-    4. Reference & Context Links.
-    -->
 </head>
 <body class="bg-sand-50 text-slate-800 font-sans antialiased">
 
     <!-- DISCLAIMER BANNER -->
-    <div class="bg-danger-600 text-white px-4 py-3 text-center text-sm font-bold shadow-md z-50 relative">
-        <span class="mr-2">⚠️</span> 
-        WARNING: This application utilizes a heuristic mathematical demonstration model for tactical planning visualization. It is NOT for live navigation. Always double-check authoritative sources (<a href="https://www.cwa.gov.tw/eng/" target="_blank" class="underline hover:text-sand-200">CWA</a>, <a href="https://marine.copernicus.eu/" target="_blank" class="underline hover:text-sand-200">Copernicus</a>, <a href="https://www.windy.com/-Ocean-currents-currents" target="_blank" class="underline hover:text-sand-200">Windy</a>, etc.) and use at your own risk.
+    <div class="bg-danger-600 text-white px-4 py-3 text-center text-sm font-medium shadow-md z-50 relative">
+        <span class="mr-2 font-bold">⚠️ WARNING:</span> 
+        This application utilizes a heuristic mathematical demonstration model for tactical planning visualization. It is NOT for live navigation. Always double-check authoritative sources 
+        (<a href="https://www.cwa.gov.tw/eng/" target="_blank" class="underline hover:text-sand-100 font-bold">CWA</a>, 
+        <a href="https://marine.copernicus.eu/" target="_blank" class="underline hover:text-sand-100 font-bold">Copernicus</a>, or 
+        <a href="https://www.windy.com/-Ocean-currents-currents" target="_blank" class="underline hover:text-sand-100 font-bold">Windy</a>, etc.) 
+        and use at your own risk.
     </div>
 
     <!-- Navigation -->
@@ -155,95 +149,100 @@
                 Client-side harmonic interpolation model (M2/S2 constituents + Inverse Distance Weighting). Coverage extends from Hong Kong to Okinawa. Drag the pin to calculate local vectors.
             </p>
 
-            <div class="bg-white rounded-2xl shadow-lg border border-sand-200 overflow-hidden">
+            <div class="bg-white rounded-2xl shadow-lg border border-sand-200 overflow-hidden flex flex-col">
                 
-                <!-- Time & Layer Control Panel -->
-                <div class="bg-sand-100 p-4 border-b border-sand-200 space-y-4">
+                <!-- The Leaflet Map (Now on Top) -->
+                <div id="copernicus-map" class="border-b border-sand-200"></div>
+
+                <!-- unified Dashboard Below Map -->
+                <div class="bg-sand-50 p-4 md:p-6 flex flex-col space-y-6">
                     
-                    <!-- Top Row: Exact Time Input & Steppers -->
-                    <div class="flex flex-wrap md:flex-nowrap items-end justify-between gap-4">
-                        <div class="w-full md:w-auto flex-grow max-w-xs">
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Time of Prediction</label>
-                            <input type="datetime-local" id="time-input" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-marine-800 outline-none">
+                    <!-- Top Row: GPS Pin Readouts -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 divide-y md:divide-y-0 md:divide-x divide-slate-300 bg-white p-4 rounded-xl shadow-sm border border-sand-200">
+                        <div class="pb-4 md:pb-0 md:pr-4 flex items-center">
+                            <div class="h-10 w-10 bg-red-100 rounded-full flex items-center justify-center mr-4 shadow-inner">
+                                <span class="text-xl">&#128205;</span>
+                            </div>
+                            <div>
+                                <span class="block text-xs text-slate-500 font-bold uppercase">Pin Location (DDM)</span>
+                                <span id="coord-display" class="block text-lg font-mono font-bold text-marine-900 mt-1">24° 00.00' N, 120° 00.00' E</span>
+                            </div>
                         </div>
-                        <div class="flex flex-wrap gap-2 w-full md:w-auto">
-                            <button id="btn-minus-day" class="flex-1 md:flex-none px-3 py-2 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 text-sm font-bold text-slate-700 shadow-sm" title="Minus 1 Day">&#9664;&#9664; -1d</button>
-                            <button id="btn-minus" class="flex-1 md:flex-none px-3 py-2 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 text-sm font-bold text-slate-700 shadow-sm" title="Minus 1 Hour">&#9664; -1h</button>
-                            <button id="btn-plus" class="flex-1 md:flex-none px-3 py-2 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 text-sm font-bold text-slate-700 shadow-sm" title="Plus 1 Hour">+1h &#9654;</button>
-                            <button id="btn-plus-day" class="flex-1 md:flex-none px-3 py-2 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 text-sm font-bold text-slate-700 shadow-sm" title="Plus 1 Day">+1d &#9654;&#9654;</button>
-                            <button id="btn-now" class="flex-1 md:flex-none px-4 py-2 bg-marine-800 text-white border border-marine-900 rounded-lg hover:bg-marine-900 text-sm font-bold shadow-sm w-full md:w-auto">Reset to Now</button>
+                        <div class="pt-4 md:pt-0 md:pl-4 flex items-center justify-between">
+                            <div>
+                                <span class="block text-xs text-slate-500 font-bold uppercase" id="readout-label">Combined Vector at Pin</span>
+                                <div class="flex items-baseline mt-1 space-x-3">
+                                    <span id="speed-display" class="text-3xl font-extrabold text-marine-800">-- kts</span>
+                                    <span id="dir-display" class="text-lg font-bold text-slate-600">--° T</span>
+                                </div>
+                            </div>
+                            <!-- Resultant Arrow visual representation of the pin data -->
+                            <div id="resultant-arrow-ui" class="h-12 w-12 rounded-full border-2 border-marine-100 bg-marine-50 flex items-center justify-center transform rotate-0 transition-transform duration-300 shadow-sm">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0c4a6e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Middle Row: 24h Slider -->
-                    <div>
-                        <div class="flex justify-between text-xs text-slate-500 font-bold mb-1">
-                            <span>00:00 (Start of Day)</span>
-                            <span id="slider-readout" class="text-marine-800">12:00</span>
-                            <span>23:59 (End of Day)</span>
+                    <!-- Middle Row: Time & Date Controls -->
+                    <div class="space-y-4">
+                        <div class="flex flex-wrap lg:flex-nowrap items-end justify-between gap-4">
+                            <!-- Time Input -->
+                            <div class="w-full lg:w-1/4">
+                                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Date & Time</label>
+                                <input type="datetime-local" id="time-input" class="w-full px-3 py-2 border border-slate-300 bg-white rounded-lg text-sm font-mono shadow-sm focus:ring-2 focus:ring-marine-800 outline-none">
+                            </div>
+                            
+                            <!-- Day & Hour Steppers -->
+                            <div class="flex flex-wrap md:flex-nowrap gap-2 w-full lg:w-auto">
+                                <button id="btn-minus-day" class="flex-1 md:flex-none px-3 py-2 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 text-sm font-bold text-slate-700 shadow-sm">-1d</button>
+                                <button id="btn-minus-hr" class="flex-1 md:flex-none px-3 py-2 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 text-sm font-bold text-slate-700 shadow-sm">-1h</button>
+                                <button id="btn-plus-hr" class="flex-1 md:flex-none px-3 py-2 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 text-sm font-bold text-slate-700 shadow-sm">+1h</button>
+                                <button id="btn-plus-day" class="flex-1 md:flex-none px-3 py-2 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 text-sm font-bold text-slate-700 shadow-sm">+1d</button>
+                                
+                                <button id="btn-now" class="flex-1 md:flex-none px-4 py-2 bg-marine-800 text-white border border-marine-900 rounded-lg hover:bg-marine-900 text-sm font-bold shadow-sm md:ml-2">Reset to Now</button>
+                            </div>
                         </div>
-                        <input type="range" id="time-slider" min="0" max="23.99" step="0.25" value="12" class="w-full">
+
+                        <!-- 24h Slider -->
+                        <div class="bg-white px-4 py-3 border border-slate-200 rounded-xl shadow-sm">
+                            <div class="flex justify-between text-xs text-slate-500 font-bold mb-2">
+                                <span>00:00</span>
+                                <span id="slider-readout" class="text-marine-800 text-sm">12:00</span>
+                                <span>23:59</span>
+                            </div>
+                            <input type="range" id="time-slider" min="0" max="23.99" step="0.25" value="12" class="w-full">
+                        </div>
                     </div>
 
                     <!-- Bottom Row: 3-Layer Selector -->
-                    <div class="pt-2">
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Display Layer Data</label>
-                        <div class="flex w-full rounded-lg shadow-sm border border-slate-300 overflow-hidden" id="layer-controls">
-                            <button class="layer-btn active flex-1 py-2 text-sm font-bold bg-white text-slate-600 border-r border-slate-300" data-layer="combined">Combined Vector</button>
-                            <button class="layer-btn flex-1 py-2 text-sm font-bold bg-white text-slate-600 border-r border-slate-300" data-layer="ocean">Ocean Current</button>
-                            <button class="layer-btn flex-1 py-2 text-sm font-bold bg-white text-slate-600" data-layer="tide">Tidal Stream (M2+S2)</button>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Active Map Layer</label>
+                        <div class="flex flex-col sm:flex-row w-full rounded-lg shadow-sm border border-slate-300 overflow-hidden" id="layer-controls">
+                            <button class="layer-btn active flex-1 py-3 text-sm font-bold bg-white text-slate-600 sm:border-r border-b sm:border-b-0 border-slate-300" data-layer="combined">Combined Vector</button>
+                            <button class="layer-btn flex-1 py-3 text-sm font-bold bg-white text-slate-600 sm:border-r border-b sm:border-b-0 border-slate-300" data-layer="ocean">Ocean Current Only</button>
+                            <button class="layer-btn flex-1 py-3 text-sm font-bold bg-white text-slate-600" data-layer="tide">Tidal Stream Only (M2+S2)</button>
                         </div>
                     </div>
 
                 </div>
-
-                <!-- The Leaflet Map -->
-                <div id="copernicus-map"></div>
-
-                <!-- GPS Pin Dashboard -->
-                <div class="bg-white p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 divide-y md:divide-y-0 md:divide-x divide-sand-200">
-                    <div class="pb-4 md:pb-0 md:pr-4 flex items-center">
-                        <div class="h-10 w-10 bg-red-100 rounded-full flex items-center justify-center mr-4 shadow-inner">
-                            <span class="text-xl">&#128205;</span>
-                        </div>
-                        <div>
-                            <span class="block text-xs text-slate-500 font-bold uppercase">Pin Location (DDM)</span>
-                            <span id="coord-display" class="block text-lg font-mono font-bold text-marine-900 mt-1">24° 00.00' N, 120° 00.00' E</span>
-                        </div>
-                    </div>
-                    <div class="pt-4 md:pt-0 md:pl-4 flex items-center justify-between">
-                        <div>
-                            <span class="block text-xs text-slate-500 font-bold uppercase" id="readout-label">Combined Vector at Pin</span>
-                            <div class="flex items-baseline mt-1 space-x-3">
-                                <span id="speed-display" class="text-3xl font-extrabold text-marine-800">-- kts</span>
-                                <span id="dir-display" class="text-lg font-bold text-slate-600">--° T</span>
-                            </div>
-                        </div>
-                        <!-- Resultant Arrow visual representation of the pin data -->
-                        <div id="resultant-arrow-ui" class="h-12 w-12 rounded-full border-2 border-marine-100 bg-marine-50 flex items-center justify-center transform rotate-0 transition-transform duration-300">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0c4a6e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
-                        </div>
-                    </div>
-                </div>
-
             </div>
         </section>
 
         <!-- References -->
         <section class="border-t border-sand-200 pt-8 pb-12">
             <h3 class="text-xl font-bold text-marine-900 mb-4">Official Hydrodynamic Data Sources</h3>
-            <ul class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-slate-600">
+            <ul class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-slate-600">
                 <li class="bg-white p-4 rounded-lg border border-sand-200 shadow-sm">
-                    <a href="https://www.cwa.gov.tw/eng/" target="_blank" class="font-bold text-marine-800 hover:underline">Taiwan Central Weather Administration (CWA)</a><br>
-                    Official local high-resolution tidal stream models.
+                    <a href="https://www.cwa.gov.tw/eng/" target="_blank" class="font-bold text-marine-800 hover:underline">Central Weather Administration</a><br>
+                    Official local high-resolution tidal stream models for Taiwan.
                 </li>
                 <li class="bg-white p-4 rounded-lg border border-sand-200 shadow-sm">
-                    <a href="https://data.marine.copernicus.eu/viewer/expert?view=viewer&crs=epsg:4326&t=1779148800000&z=-0.49402499198913574&center=120.47878645538594,24.019245458545473&zoom=14.14210866029794&layers=H4sIAE0D.2kAAxWOywqCQBRA._WuraYHEe4seghSkm0i4jLM3FS4OjEzVib_e7Y9HDjn1oHxBdmNMVY7CLs_AJYt2VhDCPvktI4SjI5Rcs3ibHc6bzdRdsH0cEUhpihmi4mqqHJYGY05G3wW7Ug1FmX9UCjGYjXXlGN6WR5GJc4GXywnjiS_pSeLL2KjSt9CAN_41vSBcCoCKP9t5PmA2eSZkkwQPiQ7CsD5limV1peKaRj2tqH_.gMNfXc.xwAAAA--&basemap=dark" target="_blank" class="font-bold text-marine-800 hover:underline">Copernicus Marine Service - Taiwan Strait View</a><br>
-                    Direct viewer link for Mercator global ocean background currents.
+                    <a href="https://data.marine.copernicus.eu/viewer/expert?view=viewer&crs=epsg:4326&t=1779148800000&z=-0.49402499198913574&center=120.47878645538594,24.019245458545473&zoom=14.14210866029794&layers=H4sIAE0D.2kAAxWOywqCQBRA._WuraYHEe4seghSkm0i4jLM3FS4OjEzVib_e7Y9HDjn1oHxBdmNMVY7CLs_AJYt2VhDCPvktI4SjI5Rcs3ibHc6bzdRdsH0cEUhpihmi4mqqHJYGY05G3wW7Ug1FmX9UCjGYjXXlGN6WR5GJc4GXywnjiS_pSeLL2KjSt9CAN_41vSBcCoCKP9t5PmA2eSZkkwQPiQ7CsD5limV1peKaRj2tqH_.gMNfXc.xwAAAA--&basemap=dark" target="_blank" class="font-bold text-marine-800 hover:underline">Copernicus Marine Service</a><br>
+                    Direct viewer link for Mercator global ocean background currents in the strait.
                 </li>
                 <li class="bg-white p-4 rounded-lg border border-sand-200 shadow-sm">
-                    <a href="https://www.windy.com/-Ocean-currents-currents" target="_blank" class="font-bold text-marine-800 hover:underline">Windy.com - Ocean Currents Overlay</a><br>
-                    A highly accessible visualization tool that integrates various models to show the kinematic vector sum of currents and tides.
+                    <a href="https://www.windy.com/-Ocean-currents-currents" target="_blank" class="font-bold text-marine-800 hover:underline">Windy.com Ocean Currents</a><br>
+                    Accessible visualization tool combining multiple global hydrodynamic models.
                 </li>
             </ul>
         </section>
@@ -265,7 +264,6 @@
             let selectedDate = new Date(); // Start at "Now"
 
             // Physics Epoch (Reference time for M2 and S2 cycles)
-            // We set an arbitrary start epoch to keep phases consistent across date changes.
             const epochRef = new Date('2026-05-30T00:00:00Z').getTime();
 
             // Grid resolution
@@ -273,53 +271,46 @@
             const GRID_STEP_LNG = 0.5; // degrees
 
             // --- 2. THE MATHEMATICAL IDW ANCHOR MODEL ---
-            // To create smooth flow fields without harsh polygon borders, we define physical properties 
-            // at key anchor points. The script calculates Inverse Distance Weighting to blend them globally.
-
             const TIDE_ANCHORS = [
-                { id: "Penghu", lat: 23.5, lng: 119.5, am2: 3.0, as2: 1.0, axis: 0, pm2: 0, ps2: 2 }, // Extreme funnelling N/S
-                { id: "Keelung", lat: 25.3, lng: 121.8, am2: 1.2, as2: 0.4, axis: 90, pm2: 3.5, ps2: 4 }, // Coastal shelf E/W
-                { id: "Matsu", lat: 26.2, lng: 120.0, am2: 2.0, as2: 0.7, axis: 30, pm2: 1, ps2: 2 }, // Northern strait entrance
-                { id: "Kao", lat: 22.5, lng: 120.2, am2: 1.0, as2: 0.3, axis: 340, pm2: 2, ps2: 3 }, // Southern tip
-                { id: "KuroshioCore", lat: 23.5, lng: 122.5, am2: 0.1, as2: 0.05, axis: 0, pm2: 0, ps2: 0 }, // Negligible in deep water
+                { id: "Penghu", lat: 23.5, lng: 119.5, am2: 3.0, as2: 1.0, axis: 0, pm2: 0, ps2: 2 }, 
+                { id: "Keelung", lat: 25.3, lng: 121.8, am2: 1.2, as2: 0.4, axis: 90, pm2: 3.5, ps2: 4 }, 
+                { id: "Matsu", lat: 26.2, lng: 120.0, am2: 2.0, as2: 0.7, axis: 30, pm2: 1, ps2: 2 }, 
+                { id: "Kao", lat: 22.5, lng: 120.2, am2: 1.0, as2: 0.3, axis: 340, pm2: 2, ps2: 3 }, 
+                { id: "KuroshioCore", lat: 23.5, lng: 122.5, am2: 0.1, as2: 0.05, axis: 0, pm2: 0, ps2: 0 }, 
                 { id: "Ryukyu", lat: 25.0, lng: 125.0, am2: 0.2, as2: 0.1, axis: 45, pm2: 0, ps2: 0 },
-                { id: "HK", lat: 22.0, lng: 114.5, am2: 1.0, as2: 0.4, axis: 60, pm2: 4, ps2: 5 }, // HK approach
+                { id: "HK", lat: 22.0, lng: 114.5, am2: 1.0, as2: 0.4, axis: 60, pm2: 4, ps2: 5 }, 
                 { id: "Luzon", lat: 20.5, lng: 121.0, am2: 0.5, as2: 0.2, axis: 90, pm2: 0, ps2: 0 }
             ];
 
             const OCEAN_ANCHORS = [
-                { id: "Kuroshio1", lat: 22.0, lng: 121.5, speed: 2.5, dir: 350 }, // Luzon strait exit pushing north
-                { id: "Kuroshio2", lat: 24.0, lng: 122.5, speed: 2.8, dir: 20 },  // Hugging east coast
-                { id: "Kuroshio3", lat: 26.0, lng: 124.5, speed: 2.0, dir: 50 },  // Turning towards Okinawa
-                { id: "StraitSummer", lat: 24.0, lng: 119.5, speed: 0.6, dir: 40 }, // SW monsoon drift through strait
+                { id: "Kuroshio1", lat: 22.0, lng: 121.5, speed: 2.5, dir: 350 }, 
+                { id: "Kuroshio2", lat: 24.0, lng: 122.5, speed: 2.8, dir: 20 },  
+                { id: "Kuroshio3", lat: 26.0, lng: 124.5, speed: 2.0, dir: 50 },  
+                { id: "StraitSummer", lat: 24.0, lng: 119.5, speed: 0.6, dir: 40 }, 
                 { id: "SouthChinaSea", lat: 21.0, lng: 117.0, speed: 0.5, dir: 60 },
                 { id: "EastChinaSea", lat: 27.0, lng: 121.0, speed: 0.4, dir: 90 }
             ];
 
-            // Helper to convert decimal degrees to Radians
             const toRad = x => x * Math.PI / 180;
             const toDeg = x => x * 180 / Math.PI;
 
-            // Simplified Quasi-Equirectangular distance squared (sufficient for relative IDW weighting over this scale)
             function getDistSq(lat1, lng1, lat2, lng2) {
                 const dx = (lng2 - lng1) * Math.cos(toRad(lat1));
                 const dy = (lat2 - lat1);
                 return (dx * dx) + (dy * dy);
             }
 
-            // Convert speed (kts) and bearing (deg) to U (East) and V (North) components
             function toUV(speed, dirDeg) {
                 const rad = toRad(dirDeg);
                 return { u: speed * Math.sin(rad), v: speed * Math.cos(rad) };
             }
 
-            // IDW Interpolation Function for Ocean (Constant over time)
             function getOceanUV(lat, lng) {
                 let sumU = 0, sumV = 0, sumW = 0;
                 for (let a of OCEAN_ANCHORS) {
                     let d2 = getDistSq(lat, lng, a.lat, a.lng);
-                    if (d2 < 0.001) d2 = 0.001; // Avoid divide by zero
-                    let w = 1.0 / (d2 * d2); // Power of 4 for tighter localization of the Kuroshio stream
+                    if (d2 < 0.001) d2 = 0.001; 
+                    let w = 1.0 / (d2 * d2); 
                     let uv = toUV(a.speed, a.dir);
                     sumU += uv.u * w;
                     sumV += uv.v * w;
@@ -328,12 +319,8 @@
                 return { u: sumU / sumW, v: sumV / sumW };
             }
 
-            // Harmonic Zonal IDW Interpolation for Tides (Time-dependent)
             function getTideUV(lat, lng, timeMs) {
-                // Hours since arbitrary epoch
                 const hours = (timeMs - epochRef) / (1000 * 60 * 60);
-                
-                // Frequencies in rad/hour
                 const wM2 = (2 * Math.PI) / 12.42;
                 const wS2 = (2 * Math.PI) / 12.00;
 
@@ -341,14 +328,12 @@
                 for (let a of TIDE_ANCHORS) {
                     let d2 = getDistSq(lat, lng, a.lat, a.lng);
                     if (d2 < 0.001) d2 = 0.001;
-                    let w = 1.0 / (d2 * d2); // Power of 4 
+                    let w = 1.0 / (d2 * d2); 
 
-                    // Harmonic Oscillator
                     let speedM2 = a.am2 * Math.cos(wM2 * hours + a.pm2);
                     let speedS2 = a.as2 * Math.cos(wS2 * hours + a.ps2);
                     let totalSpeed = speedM2 + speedS2;
                     
-                    // The axis defines flood direction. If totalSpeed is negative, the UV math naturally handles the 180 deg flip (Ebb).
                     let uv = toUV(totalSpeed, a.axis);
                     
                     sumU += uv.u * w;
@@ -358,7 +343,6 @@
                 return { u: sumU / sumW, v: sumV / sumW };
             }
 
-            // Calculate Combined Vector based on Layer State
             function getVectorAt(lat, lng, timeMs) {
                 const ocean = getOceanUV(lat, lng);
                 const tide = getTideUV(lat, lng, timeMs);
@@ -383,21 +367,17 @@
                 return { speed: speed, dir: dir, u: finalU, v: finalV };
             }
 
-            // Very rough landmask logic (polygon checking to keep arrows off land)
+            // Landmask logic
             function isWater(lat, lng) {
-                // Mainland China Mask
-                if (lng < 118 && lat > 22) return false; // Approximate Guangdong
-                if (lng < 120 && lat > 24) return false; // Approximate Fujian
-                if (lng < 122 && lat > 27) return false; // North
-                // Taiwan Island Mask (rough bounding box)
+                if (lng < 118 && lat > 22) return false; 
+                if (lng < 120 && lat > 24) return false; 
+                if (lng < 122 && lat > 27) return false; 
                 if (lat > 22.0 && lat < 25.3 && lng > 120.2 && lng < 122.0) return false; 
-                // Luzon Mask
                 if (lat < 18.5 && lng > 120 && lng < 122.5) return false;
-
                 return true;
             }
 
-            // Formatter: Dec Degrees to Degrees Decimal Minutes (DDM)
+            // Formatter: Dec Degrees to DDM
             function toDDM(deg, isLng) {
                 const dir = deg < 0 ? (isLng ? 'W' : 'S') : (isLng ? 'E' : 'N');
                 const absDeg = Math.abs(deg);
@@ -409,62 +389,56 @@
             // --- 3. UI RENDERING & LEAFLET INITIALIZATION ---
 
             function initMap() {
-                // Initialize map centered on Taiwan Strait
                 map = L.map('copernicus-map', {
-                    zoomControl: false // Custom placement later if needed
+                    zoomControl: false 
                 }).setView([23.5, 120.5], 6);
 
-                // High-contrast deep sea basemap (ESRI Ocean)
-                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}', {
-                    attribution: 'Tiles &copy; Esri &mdash; Sources: GEBCO, NOAA, CHS, OSU, UNH, CSUMB, National Geographic, DeLorme, NAVTEQ, and Esri',
-                    maxZoom: 13
+                // High-contrast Dark Matter basemap for better arrow visibility and unrestricted zooming
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                    subdomains: 'abcd',
+                    maxZoom: 19 // FIXED zoom limitation here
                 }).addTo(map);
                 
                 L.control.zoom({ position: 'topright' }).addTo(map);
-
                 vectorLayerGroup = L.layerGroup().addTo(map);
 
                 // Custom SVG Teardrop Red Marker
-                const redPinSvg = `<svg viewBox="0 0 24 24" fill="#dc2626" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 drop-shadow-md"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3" fill="#ffffff"></circle></svg>`;
+                const redPinSvg = `<svg viewBox="0 0 24 24" fill="#ef4444" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 drop-shadow-lg"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3" fill="#ffffff"></circle></svg>`;
                 const customIcon = L.divIcon({
                     html: redPinSvg,
                     className: 'bg-transparent',
                     iconSize: [32, 32],
-                    iconAnchor: [16, 32] // Point of the teardrop
+                    iconAnchor: [16, 32] 
                 });
 
-                // Set initial marker location
                 marker = L.marker([24.0, 119.5], { 
                     draggable: true,
                     icon: customIcon,
                     zIndexOffset: 1000 
                 }).addTo(map);
 
-                // Events
                 marker.on('drag', updateReadouts);
                 map.on('moveend', renderVectorGrid);
 
-                // Initial render
                 updateTimeUI();
                 renderVectorGrid();
                 updateReadouts();
             }
 
-            // Creates an SVG arrow rotated and scaled
             function createArrowIcon(speed, dir) {
-                // Color scale based on speed
-                let color = "#38bdf8"; // Light Blue (slow)
-                if (speed > 1.5) color = "#10b981"; // Green
-                if (speed > 2.5) color = "#eab308"; // Yellow
-                if (speed > 3.5) color = "#ef4444"; // Red (Extreme)
+                // High contrast colors for dark basemap
+                let color = "#22d3ee"; // Neon Cyan (slow)
+                if (speed > 1.0) color = "#4ade80"; // Neon Green
+                if (speed > 2.0) color = "#facc15"; // Bright Yellow
+                if (speed > 3.0) color = "#f87171"; // Bright Red
 
-                // Scale length based on speed (min size to remain visible)
-                const scale = Math.max(0.4, Math.min(1.5, speed / 2.0));
+                const scale = Math.max(0.6, Math.min(1.5, speed / 2.0));
                 
-                const svg = `<div class="vector-arrow" style="transform: rotate(${dir}deg) scale(${scale}); width: 24px; height: 24px; opacity: 0.85;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="12" y1="20" x2="12" y2="4"></line>
-                        <polyline points="6 10 12 4 18 10"></polyline>
+                const svg = `<div class="vector-arrow" style="transform: rotate(${dir}deg) scale(${scale}); width: 24px; height: 24px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="21" x2="12" y2="3"></line>
+                        <polyline points="5 10 12 3 19 10"></polyline>
                     </svg>
                 </div>`;
                 
@@ -476,13 +450,11 @@
                 });
             }
 
-            // Render the dense grid of arrows over the visible map area
             function renderVectorGrid() {
                 if(!map) return;
                 vectorLayerGroup.clearLayers();
 
                 const bounds = map.getBounds();
-                // Extend coverage area bounds: HK to Naha, Luzon to Fuzhou
                 const maxSouth = Math.max(bounds.getSouth(), 18.0);
                 const maxNorth = Math.min(bounds.getNorth(), 28.0);
                 const maxWest = Math.max(bounds.getWest(), 113.0);
@@ -494,11 +466,10 @@
                     for (let lng = maxWest; lng <= maxEast; lng += GRID_STEP_LNG) {
                         if (isWater(lat, lng)) {
                             const vector = getVectorAt(lat, lng, timeMs);
-                            // Only draw if speed is significant to reduce clutter
                             if (vector.speed > 0.1) {
                                 L.marker([lat, lng], {
                                     icon: createArrowIcon(vector.speed, vector.dir),
-                                    interactive: false // Don't block map dragging
+                                    interactive: false 
                                 }).addTo(vectorLayerGroup);
                             }
                         }
@@ -506,32 +477,26 @@
                 }
             }
 
-            // Update the Data Dashboard bound to the Teardrop Pin
             function updateReadouts() {
                 const pos = marker.getLatLng();
                 const timeMs = selectedDate.getTime();
                 
-                // Update Coordinates DDM
                 const coordStr = `${toDDM(pos.lat, false)}, ${toDDM(pos.lng, true)}`;
                 document.getElementById('coord-display').textContent = coordStr;
 
-                // Update Math
                 const vector = getVectorAt(pos.lat, pos.lng, timeMs);
                 
                 document.getElementById('speed-display').textContent = vector.speed.toFixed(1) + ' kts';
                 document.getElementById('dir-display').textContent = Math.round(vector.dir) + '° T';
 
-                // Update Visual Readout Arrow
                 const arrowUi = document.getElementById('resultant-arrow-ui');
                 arrowUi.style.transform = `rotate(${vector.dir}deg)`;
                 
-                // Visual logic for readout ring
                 arrowUi.classList.remove('border-marine-100', 'border-red-400', 'border-yellow-400');
                 if(vector.speed > 3) arrowUi.classList.add('border-red-400');
                 else if(vector.speed > 1.5) arrowUi.classList.add('border-yellow-400');
                 else arrowUi.classList.add('border-marine-100');
             }
-
 
             // --- 4. CONTROL BINDINGS ---
 
@@ -540,13 +505,11 @@
             const sliderReadout = document.getElementById('slider-readout');
 
             function syncTimeToUI() {
-                // Format for datetime-local (YYYY-MM-DDTHH:mm)
                 const d = selectedDate;
                 const tzOffset = d.getTimezoneOffset() * 60000;
                 const localISOTime = (new Date(d - tzOffset)).toISOString().slice(0, 16);
                 timeInput.value = localISOTime;
 
-                // Slider handles time within the current day (0 to 23.99 hours)
                 const hours = d.getHours() + (d.getMinutes() / 60);
                 timeSlider.value = hours;
                 
@@ -561,7 +524,6 @@
                 updateReadouts();
             }
 
-            // Input: Datetime Box
             timeInput.addEventListener('change', (e) => {
                 if(e.target.value) {
                     selectedDate = new Date(e.target.value);
@@ -569,7 +531,6 @@
                 }
             });
 
-            // Input: Range Slider
             timeSlider.addEventListener('input', (e) => {
                 const decimalHours = parseFloat(e.target.value);
                 const h = Math.floor(decimalHours);
@@ -577,37 +538,37 @@
                 
                 selectedDate.setHours(h);
                 selectedDate.setMinutes(m);
-                
-                syncTimeToUI(); // update text but don't re-render entire grid during slide to prevent lag
+                syncTimeToUI(); 
             });
             timeSlider.addEventListener('change', () => {
-                renderVectorGrid(); // Render grid on mouse-release
+                renderVectorGrid(); 
                 updateReadouts();
             });
 
-            // Buttons: Step & Now
-            document.getElementById('btn-minus-day').addEventListener('click', () => {
-                selectedDate.setDate(selectedDate.getDate() - 1);
-                updateTimeUI();
-            });
-            document.getElementById('btn-minus').addEventListener('click', () => {
+            // Hour and Day Steppers
+            document.getElementById('btn-minus-hr').addEventListener('click', () => {
                 selectedDate.setHours(selectedDate.getHours() - 1);
                 updateTimeUI();
             });
-            document.getElementById('btn-plus').addEventListener('click', () => {
+            document.getElementById('btn-plus-hr').addEventListener('click', () => {
                 selectedDate.setHours(selectedDate.getHours() + 1);
+                updateTimeUI();
+            });
+            document.getElementById('btn-minus-day').addEventListener('click', () => {
+                selectedDate.setDate(selectedDate.getDate() - 1);
                 updateTimeUI();
             });
             document.getElementById('btn-plus-day').addEventListener('click', () => {
                 selectedDate.setDate(selectedDate.getDate() + 1);
                 updateTimeUI();
             });
+            
             document.getElementById('btn-now').addEventListener('click', () => {
                 selectedDate = new Date();
                 updateTimeUI();
             });
 
-            // 3-Layer Selector Logic
+            // Layer Selection
             const layerBtns = document.querySelectorAll('.layer-btn');
             layerBtns.forEach(btn => {
                 btn.addEventListener('click', (e) => {
@@ -616,7 +577,6 @@
                     
                     activeLayer = e.target.getAttribute('data-layer');
                     
-                    // Update Label
                     const labels = {
                         'combined': 'Combined Vector at Pin',
                         'ocean': 'Ocean Current at Pin',
@@ -629,7 +589,6 @@
                 });
             });
 
-            // Kickoff
             initMap();
         };
     </script>
