@@ -1,128 +1,96 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sailing Expedition Weather Dashboard</title>
     
-    <!-- Chosen Palette: Warm Neutrals & Muted Ocean. Background: #F9F8F6 (Sand), Cards: #FFFFFF (White), Primary Data: #4B7293 (Muted Blue), Accents: #D97736 (Terracotta), #4A7C59 (Muted Green). -->
-    <!-- Application Structure Plan: A centralized interactive dashboard designed for quick decision-making at sea. The structure uses a top-level "Voyage Leg" selector to instantly filter all downstream data between Coastal and Ocean phases. It prioritizes immediate KPI visibility (Current Conditions) followed by detailed trend analysis (Wind, Wave, Pressure charts) which are crucial for sailing. This layout allows navigators to quickly grasp the overall safety status and then drill down into specific meteorological metrics without leaving the page. -->
-    <!-- Visualization & Content Choices: 
-         1. Wind Speed & Gusts -> Goal: Identify safe sailing windows -> Viz: Line Chart with Fill (Chart.js Canvas) -> Interaction: Leg filtering -> Justification: Line charts best show continuous trends over time. 
-         2. Sea State (Wave Height) -> Goal: Assess vessel stress & comfort -> Viz: Bar Chart (Chart.js Canvas) -> Interaction: Hover for exact height -> Justification: Bars clearly delineate discrete height values per time period.
-         3. Barometric Pressure -> Goal: Predict incoming weather systems -> Viz: Line Chart (Chart.js Canvas) -> Interaction: Leg filtering -> Justification: Pressure drops are key leading indicators of storms; line slopes make drops obvious.
-         NO SVG/Mermaid used. Standard Canvas and Unicode icons utilized. -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
-
-    <!-- Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js via CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <!-- Tailwind Config for Dark Mode -->
     <script>
         tailwind.config = {
             darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        marine: { dark: '#0f172a', card: '#1e293b', accent: '#D97736' }
-                    }
-                }
-            }
+            theme: { extend: { colors: { ocean: '#4B7293', oceanDark: '#3A5A75', danger: '#D97736', safe: '#4A7C59' } } }
         }
     </script>
-
-    <!-- Leaflet CSS & JS for Visual Boundary Mapping -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <style>
-        /* Custom Styles & Chart Container Constraints */
-        body {
-            background-color: #F9F8F6;
-            color: #333333;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            transition: background-color 0.3s, color 0.3s;
-        }
-        
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
         .card {
-            background-color: #FFFFFF;
+            background-color: theme('colors.white');
             border-radius: 0.75rem;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
             padding: 1.5rem;
             transition: background-color 0.3s, border-color 0.3s;
         }
 
-        /* Dark Mode Overrides for Night Vision Preservation */
-        html.dark body {
-            background-color: #020617; /* Very dark blue/black */
-            color: #94a3b8;
-        }
-        html.dark .card {
-            background-color: #0f172a;
-            border: 1px solid #1e293b;
-            box-shadow: none;
-        }
-        html.dark .text-gray-800, html.dark .text-gray-900 { color: #f8fafc; }
-        html.dark .text-gray-600, html.dark .text-gray-500 { color: #cbd5e1; }
-        html.dark .bg-white { background-color: #0f172a; }
-        html.dark .bg-gray-50, html.dark .bg-gray-100 { background-color: #1e293b; }
-        html.dark .border-gray-200, html.dark .border-gray-300 { border-color: #334155; }
-        html.dark input, html.dark select { 
-            background-color: #1e293b; 
-            color: #f8fafc; 
-            border-color: #475569; 
-        }
+        .dark body { background-color: #121212; color: #E0E0E0; }
+        .dark .card { background-color: #1E1E1E; border: 1px solid #333; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .dark input { background-color: #2A2A2A; color: #FFF; border-color: #444; }
+        .dark .bg-gray-50 { background-color: #1A1A1A; border-color: #333; }
+        .dark .border-b, .dark .border-t { border-color: #333; }
+        
+        .dark .leaflet-layer, .dark .leaflet-control-zoom-in, .dark .leaflet-control-zoom-out, .dark .leaflet-control-attribution { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
 
-        /* CRITICAL: Chart Container Responsiveness & Constraints */
         .chart-container {
-            position: relative;
-            width: 100%;
-            max-width: 1000px;
-            margin-left: auto;
-            margin-right: auto;
-            height: 35vh;
-            min-height: 250px;
-            max-height: 400px;
+            position: relative; width: 100%; max-width: 1000px; margin-left: auto; margin-right: auto;
+            height: 35vh; min-height: 250px; max-height: 400px;
         }
 
-        /* Custom Scrollbar for better UI */
-        ::-webkit-scrollbar {
-            width: 8px;
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #C1C1C1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #A8A8A8; }
+        .dark ::-webkit-scrollbar-thumb { background: #555; }
+
+        .tab-active { border-bottom: 2px solid theme('colors.ocean'); color: theme('colors.ocean'); font-weight: 600; }
+        .tab-inactive { color: #6b7280; }
+        .dark .tab-inactive { color: #9ca3af; }
+        .dark .tab-active { color: #60a5fa; border-color: #60a5fa; }
+        
+        #map-container { height: 400px; width: 100%; z-index: 10; border-radius: 0.5rem; overflow: hidden; }
+
+        .wp-marker {
+            border-radius: 50%;
+            border: 2px solid #FFFFFF;
+            box-shadow: 0 0 4px rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; font-weight: bold; color: white;
+            cursor: pointer;
         }
-        ::-webkit-scrollbar-track {
-            background: #F1F1F1;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #C1C1C1;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #A8A8A8;
-        }
+        .wp-start { background-color: #4A7C59; }
+        .wp-mid { background-color: #4B7293; }
+        .wp-dest { background-color: #D97736; }
     </style>
 </head>
-<body class="antialiased selection:bg-[#4B7293] selection:text-white pb-12 transition-colors duration-300">
+<body class="antialiased selection:bg-ocean selection:text-white pb-12 transition-colors duration-300 bg-[#F9F8F6]">
 
-    <!-- Header Navigation -->
-    <header class="bg-white border-b border-gray-200 sticky top-0 z-50 transition-colors duration-300">
+    <div class="bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-400 p-4">
+        <div class="max-w-7xl mx-auto flex items-start">
+            <div class="flex-shrink-0"><span class="text-yellow-600 dark:text-yellow-400 text-xl">⚠️</span></div>
+            <div class="ml-3">
+                <p class="text-sm text-yellow-800 dark:text-yellow-200 font-medium">
+                    <strong>DISCLAIMER & CONDITIONS OF USE:</strong> This application is a secondary aid to navigation. It relies on third-party API data (<a href="https://open-meteo.com/" target="_blank" class="underline">Open-Meteo</a>, <a href="https://predictwind.com/" target="_blank" class="underline">PredictWind</a>, RainViewer) which may be delayed or inaccurate. 
+                    <strong>CRITICAL: This routing algorithm calculates based on drawn waypoints and constant speed. It DOES NOT calculate the effects of ocean currents, tidal streams, leeway, or vessel polar performance.</strong> 
+                    Use entirely at your own risk. The Master of the vessel remains solely responsible for safety.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <header class="bg-white dark:bg-[#1E1E1E] border-b border-gray-200 dark:border-[#333] sticky top-0 z-50 transition-colors duration-300 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <span class="text-2xl">⛵</span>
-                <h1 class="text-xl font-bold text-[#333333] tracking-tight">Expedition <span class="text-[#4B7293]">WeatherNav</span></h1>
+                <h1 class="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Expedition <span class="text-ocean dark:text-blue-400">WeatherNav</span></h1>
             </div>
-            
             <div class="flex items-center gap-4">
-                <!-- Theme Toggles -->
-                <div class="flex items-center bg-gray-100 rounded-lg p-1 border border-gray-200">
-                    <button onclick="app.setTheme('day')" id="theme-day" class="px-3 py-1 text-sm rounded-md font-medium transition-colors bg-white shadow-sm text-gray-800" title="Day Mode">☀️</button>
-                    <button onclick="app.setTheme('dark')" id="theme-dark" class="px-3 py-1 text-sm rounded-md font-medium transition-colors text-gray-500 hover:text-gray-800" title="Night Vision Mode">🌙</button>
-                    <button onclick="app.setTheme('auto')" id="theme-auto" class="px-3 py-1 text-sm rounded-md font-medium transition-colors text-gray-500 hover:text-gray-800" title="Auto (Sunrise/Sunset)">⚙️ Auto</button>
-                </div>
-
-                <div class="hidden sm:flex text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full items-center gap-2">
-                    <span id="sync-icon">⏱️</span> Last Sync: <span id="last-sync-time" class="text-gray-800">Never</span>
+                <div class="bg-gray-100 dark:bg-[#2A2A2A] rounded-lg p-1 flex text-sm">
+                    <button onclick="themeManager.setTheme('light')" id="btn-light" class="px-3 py-1 rounded-md bg-white shadow-sm dark:bg-transparent dark:shadow-none dark:text-gray-400">☀️ Day</button>
+                    <button onclick="themeManager.setTheme('dark')" id="btn-dark" class="px-3 py-1 rounded-md text-gray-500 dark:text-white dark:bg-[#444] dark:shadow-sm">🌙 Dark</button>
+                    <button onclick="themeManager.setAuto()" id="btn-auto" class="px-3 py-1 rounded-md text-gray-500 dark:text-gray-400">⏱️ Auto</button>
                 </div>
             </div>
         </div>
@@ -130,909 +98,705 @@
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 space-y-8">
         
-        <!-- Contextual Introduction -->
-        <section class="max-w-4xl">
-            <h2 class="text-3xl font-semibold mb-3 text-gray-900">Voyage Weather Intelligence</h2>
-            <p class="text-gray-600 leading-relaxed text-lg">
-                This dashboard dynamically queries <strong>Open-Meteo</strong> to build a customized forecast along your exact route. By estimating your vessel's progress, it projects the weather you will encounter at the specific time you arrive at each coordinate.
-            </p>
+        <section class="card border-t-4 border-ocean">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">🧭 Voyage Configuration</h2>
             
-            <div class="bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-400 p-4 mt-4 rounded-r shadow-sm">
-                <div class="flex">
-                    <div class="flex-shrink-0 text-xl">⚠️</div>
-                    <div class="ml-3">
-                        <p class="text-sm text-yellow-800 dark:text-yellow-200 mb-2">
-                            <strong>Navigational Disclaimer:</strong> This application provides meteorological forecasts based strictly on your estimated straight-line progress. It explicitly <strong>does not consider ocean currents, tidal streams, or vessel leeway</strong>. Always consult local tide tables, pilot charts, and current models alongside this data.
-                        </p>
-                        <p class="text-sm text-yellow-800 dark:text-yellow-200 mb-2">
-                            <strong>Terms of Use:</strong> Data provided is for informational purposes only and is generated by third-party APIs. <strong>Use at your own risk.</strong> Do not rely solely on this dashboard for life-safety or critical navigational decisions.
-                        </p>
-                        <p class="text-xs text-yellow-700 dark:text-yellow-300 mt-2">
-                            <strong>Data Sources:</strong> Routing forecasts via <a href="https://open-meteo.com/" target="_blank" class="underline hover:text-yellow-900 dark:hover:text-yellow-100">Open-Meteo</a> | Radar via <a href="https://www.rainviewer.com/" target="_blank" class="underline hover:text-yellow-900 dark:hover:text-yellow-100">RainViewer</a> | Synoptic models via <a href="https://www.predictwind.com/" target="_blank" class="underline hover:text-yellow-900 dark:hover:text-yellow-100">PredictWind</a>.
-                        </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                <div class="lg:col-span-2">
+                    <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Start Location (Lat, Lon)</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="start-lat" value="22.3" class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-ocean outline-none transition-colors" placeholder="Lat (HK: 22.3)">
+                        <input type="text" id="start-lon" value="114.1" class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-ocean outline-none transition-colors" placeholder="Lon (HK: 114.1)">
+                    </div>
+                </div>
+
+                <div class="flex justify-center items-center h-full pb-2 hidden lg:flex">
+                    <button onclick="app.handleReverseRoute()" class="text-ocean hover:bg-blue-50 dark:hover:bg-blue-900/30 p-2 rounded-full transition-colors flex flex-col items-center gap-1 group" title="Reverse Route">
+                        <span class="text-xl transform group-hover:scale-110 transition-transform">🔄</span>
+                        <span class="text-[10px] font-bold uppercase tracking-wider">Reverse</span>
+                    </button>
+                </div>
+
+                <div class="lg:col-span-2">
+                    <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Destination (Lat, Lon)</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="dest-lat" value="25.1" class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-ocean outline-none transition-colors" placeholder="Lat (Keelung: 25.1)">
+                        <input type="text" id="dest-lon" value="121.7" class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-ocean outline-none transition-colors" placeholder="Lon (Keelung: 121.7)">
                     </div>
                 </div>
             </div>
 
-            <div id="api-status-msg" class="hidden mt-3 p-3 rounded-md text-sm font-bold"></div>
-        </section>
-
-        <!-- Voyage Planner & Navigation Boundary -->
-        <section class="card border-t-4 border-[#4B7293]">
-            <div class="flex flex-col lg:flex-row gap-6">
-                <!-- Route Configuration Input -->
-                <div class="w-full lg:w-1/3 space-y-5">
-                    <div>
-                        <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2"><span>📍</span> Voyage Configuration</h3>
-                        <p class="text-sm text-gray-500 mt-1">Set your route. The forecast timeline will roll forward along this path.</p>
-                    </div>
-                    
-                    <!-- Start Location -->
-                    <div class="space-y-2 bg-gray-50 p-3 rounded-lg border border-gray-200">
-                        <div class="flex justify-between items-center">
-                            <label class="text-xs font-bold text-gray-700 uppercase">1. Start / Current Pos</label>
-                            <button onclick="app.getDeviceLocation()" class="text-xs bg-[#4B7293] text-white px-2 py-1 rounded flex items-center gap-1 hover:bg-[#3A5A75]"><span>📱</span> Get GPS</button>
-                        </div>
-                        <div class="flex gap-2">
-                            <input type="number" id="start-lat" step="0.0001" class="w-full p-2 border rounded bg-white text-sm font-mono" placeholder="Lat (e.g. 22.25)" value="22.2500">
-                            <input type="number" id="start-lon" step="0.0001" class="w-full p-2 border rounded bg-white text-sm font-mono" placeholder="Lon (e.g. 114.16)" value="114.1600">
-                        </div>
-                    </div>
-
-                    <!-- Reverse Route Button -->
-                    <div class="flex justify-center -my-5 relative z-10">
-                        <button onclick="app.reverseRoute()" class="flex items-center gap-1.5 bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-200 rounded-full px-4 py-1 border-4 border-white dark:border-[#1e293b] shadow-sm transition-transform hover:scale-105" title="Reverse Route">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v12"/><path d="M15 5.88 14 14"/><path d="m10.5 14.5-3.5 3.5-3.5-3.5"/><path d="M17 14V2"/><path d="m20.5 5.5-3.5-3.5-3.5 3.5"/></svg>
-                            <span class="text-xs font-bold uppercase tracking-wider">Reverse</span>
-                        </button>
-                    </div>
-
-                    <!-- Destination Location -->
-                    <div class="space-y-2 bg-gray-50 p-3 rounded-lg border border-gray-200">
-                        <label class="text-xs font-bold text-gray-700 uppercase block">2. Destination Pos</label>
-                        <div class="flex gap-2">
-                            <input type="number" id="dest-lat" step="0.0001" class="w-full p-2 border rounded bg-white text-sm font-mono" placeholder="Lat (e.g. 25.15)" value="25.1500">
-                            <input type="number" id="dest-lon" step="0.0001" class="w-full p-2 border rounded bg-white text-sm font-mono" placeholder="Lon (e.g. 121.74)" value="121.7400">
-                        </div>
-                    </div>
-
-                    <!-- Vessel Speed -->
-                    <div class="space-y-2 bg-gray-50 p-3 rounded-lg border border-gray-200 flex items-center justify-between">
-                        <label class="text-xs font-bold text-gray-700 uppercase">3. Avg Speed (kts)</label>
-                        <input type="number" id="vessel-speed" step="0.1" class="w-24 p-2 border rounded bg-white text-center font-mono font-bold" value="6.0">
-                    </div>
-
-                    <div class="pt-2">
-                        <button onclick="app.calculateRouteAndFetchWeather()" id="btn-fetch" class="w-full bg-[#D97736] hover:bg-[#B8622A] text-white py-3 rounded-lg transition-colors font-bold text-lg shadow-md flex justify-center items-center gap-2">
-                            <span>📡</span> Generate Route Forecast
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Map Boundary -->
-                <div class="w-full lg:w-2/3 h-[450px] bg-gray-200 rounded-lg overflow-hidden relative z-0 border border-gray-300" id="boundary-map">
-                    <!-- Leaflet map injected here -->
-                </div>
-            </div>
-            
-            <!-- Route Metadata -->
-            <div id="route-meta" class="mt-4 flex gap-4 text-sm text-gray-700 justify-between font-medium hidden p-3 bg-[#F2F7F4] border border-[#4A7C59] rounded-lg dark:bg-green-900/20 dark:text-green-100">
-                <span><strong>Distance:</strong> <span id="meta-dist">--</span> NM</span>
-                <span><strong>Est. Duration:</strong> <span id="meta-time">--</span> Days</span>
-                <span><strong>Arrival:</strong> <span id="meta-arrival">--</span></span>
-            </div>
-        </section>
-
-        <!-- Route Waypoint Conditions -->
-        <section>
-            <div class="mb-4 mt-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3">
-                <div>
-                    <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100 border-b-2 border-[#D97736] pb-1 inline-block">Waypoint Conditions (ETA)</h3>
-                    <p class="text-sm text-gray-500 mt-1">Forecasted conditions at estimated arrival times along your route.</p>
-                </div>
-                <button onclick="app.toggleRouteTable()" class="text-sm bg-[#4B7293] hover:bg-[#3A5A75] text-white px-4 py-2 rounded-lg transition-colors font-semibold shadow-sm flex items-center gap-2">
-                    <span>📄</span> Toggle Full Route Table
+            <div class="mt-4 flex justify-center lg:hidden">
+                <button onclick="app.handleReverseRoute()" class="text-ocean font-semibold border border-ocean hover:bg-ocean hover:text-white px-4 py-1.5 rounded-full transition-colors flex items-center gap-2 text-sm">
+                    <span>🔄</span> Reverse Route
                 </button>
             </div>
-            
-            <!-- Dynamic Tabs -->
-            <div class="flex flex-wrap gap-2 mb-4" id="waypoint-tabs">
-                <!-- Buttons injected via JS -->
-            </div>
 
-            <!-- Tab Content Panel -->
-            <div class="card bg-[#F9F8F6] dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-sm" id="waypoint-content">
-                 <!-- Sub-panels injected via JS -->
-            </div>
-
-            <!-- Full Route Table (Hidden by default) -->
-            <div id="route-table-container" class="hidden mt-4 overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700 shadow-sm">
-                <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700 bg-white dark:bg-slate-900 text-sm">
-                    <thead class="bg-gray-50 dark:bg-slate-800">
-                        <tr>
-                            <th class="px-4 py-3 text-left font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Waypoint</th>
-                            <th class="px-4 py-3 text-left font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">ETA</th>
-                            <th class="px-4 py-3 text-left font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Wind (kts)</th>
-                            <th class="px-4 py-3 text-left font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Waves (m)</th>
-                            <th class="px-4 py-3 text-left font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Pressure (hPa)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="route-table-body" class="divide-y divide-gray-200 dark:divide-slate-700">
-                        <!-- Rows injected via JS -->
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- Live Map & Radar Section -->
-        <section class="space-y-6 mt-8">
-            <div class="mb-2">
-                <h3 class="text-xl font-bold text-gray-800 border-b-2 border-[#4B7293] pb-1 inline-block">Professional Routing Maps & Radar</h3>
-                <p class="text-sm text-gray-500 mt-1">Wide perspective synoptic data and live localized rain radar overlays.</p>
-            </div>
-
-            <!-- PredictWind Embed -->
-            <div class="card p-0 overflow-hidden bg-[#1A202C] border-2 border-gray-800">
-                <div class="flex justify-between items-center p-3 border-b border-gray-700">
-                    <h4 class="text-lg font-bold text-white flex items-center gap-2"><span>🌍</span> PredictWind Wide Perspective (200-400NM)</h4>
-                    <span class="text-xs font-bold bg-blue-600 text-white px-2 py-1 rounded shadow">PRO SUB</span>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4 pt-4 border-t border-gray-100 dark:border-[#333]">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Est. Avg Speed (Knots)</label>
+                    <input type="number" id="vessel-speed" value="6" step="0.5" class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-ocean outline-none transition-colors">
                 </div>
-                <!-- Embed provided by user -->
-                <div class="w-full h-[800px] relative">
-                    <iframe src="https://forecast.predictwind.com/embed/HKTaiwan" height="100%" width="100%" frameborder="0" class="absolute inset-0"></iframe>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Departure Time (Local)</label>
+                    <input type="datetime-local" id="route-departure" class="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-ocean outline-none transition-colors font-mono text-sm">
                 </div>
-            </div>
-
-            <!-- RainViewer Radar Embed -->
-            <div class="card p-0 overflow-hidden border border-gray-300">
-                <div class="flex justify-between items-center p-3 bg-gray-50 border-b border-gray-200">
-                    <h4 class="text-lg font-bold text-gray-800 flex items-center gap-2"><span>🌧️</span> Local Rain Radar (RainViewer)</h4>
-                    <p class="text-sm text-gray-500 hidden sm:block">Real-time precipitation tracking.</p>
+                <div class="flex items-end">
+                    <button onclick="app.handleNewRoute()" id="btn-calculate" class="w-full bg-ocean hover:bg-oceanDark text-white font-bold py-2 px-4 rounded-md shadow transition-colors flex items-center justify-center gap-2">
+                        <span>📡</span> Generate New Route
+                    </button>
                 </div>
-                <div class="w-full h-[400px] relative">
-                    <iframe id="rainviewer-frame" src="https://www.rainviewer.com/map.html?loc=22.25,114.16,6&oFa=0&oC=0&oU=0&oCS=1&oF=0&oM=0&color=2&app=1" width="100%" height="100%" frameborder="0" class="absolute inset-0"></iframe>
-                </div>
-            </div>
-        </section>
-
-        <!-- KPI Dashboard Section -->
-        <section>
-            <div class="mb-4">
-                <h3 class="text-xl font-bold text-gray-800 border-b-2 border-[#4B7293] pb-1 inline-block">Current Leg Averages</h3>
-                <p class="text-sm text-gray-500 mt-1">Snapshot of primary meteorological indicators for the selected voyage phase.</p>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <!-- Wind KPI -->
-                <div class="card flex flex-col justify-between border-t-4 border-[#4B7293]">
-                    <div class="flex justify-between items-start">
-                        <span class="text-gray-500 font-medium text-sm uppercase tracking-wider">Avg Wind Speed</span>
-                        <span class="text-2xl text-[#4B7293]">🌬️</span>
-                    </div>
-                    <div class="mt-4">
-                        <span id="kpi-wind" class="text-4xl font-bold text-gray-900">15</span>
-                        <span class="text-gray-500 ml-1 font-medium">kts</span>
-                    </div>
-                    <p id="kpi-wind-desc" class="text-sm text-gray-500 mt-2">Moderate breeze, ideal for sailing.</p>
-                </div>
-
-                <!-- Wave KPI -->
-                <div class="card flex flex-col justify-between border-t-4 border-[#4A7C59]">
-                    <div class="flex justify-between items-start">
-                        <span class="text-gray-500 font-medium text-sm uppercase tracking-wider">Avg Wave Height</span>
-                        <span class="text-2xl text-[#4A7C59]">〰️</span>
-                    </div>
-                    <div class="mt-4">
-                        <span id="kpi-wave" class="text-4xl font-bold text-gray-900">1.2</span>
-                        <span class="text-gray-500 ml-1 font-medium">m</span>
-                    </div>
-                    <p id="kpi-wave-desc" class="text-sm text-gray-500 mt-2">Slight seas, comfortable conditions.</p>
-                </div>
-
-                <!-- Pressure KPI -->
-                <div class="card flex flex-col justify-between border-t-4 border-gray-400">
-                    <div class="flex justify-between items-start">
-                        <span class="text-gray-500 font-medium text-sm uppercase tracking-wider">Mean Pressure</span>
-                        <span class="text-2xl text-gray-500">⏬</span>
-                    </div>
-                    <div class="mt-4">
-                        <span id="kpi-pressure" class="text-4xl font-bold text-gray-900">1015</span>
-                        <span class="text-gray-500 ml-1 font-medium">hPa</span>
-                    </div>
-                    <p id="kpi-pressure-desc" class="text-sm text-gray-500 mt-2">Stable high-pressure system.</p>
-                </div>
-
-                <!-- Status KPI -->
-                <div id="kpi-status-card" class="card flex flex-col justify-between border-t-4 border-[#4A7C59] bg-[#F2F7F4]">
-                    <div class="flex justify-between items-start">
-                        <span class="text-gray-700 font-bold text-sm uppercase tracking-wider">Overall Status</span>
-                        <span id="kpi-status-icon" class="text-2xl">✅</span>
-                    </div>
-                    <div class="mt-4">
-                        <span id="kpi-status-text" class="text-2xl font-bold text-[#2C523B]">GO</span>
-                    </div>
-                    <p id="kpi-status-desc" class="text-sm text-gray-600 mt-2">Conditions are favorable for departure.</p>
-                </div>
-            </div>
+            <div id="route-summary" class="mt-4 text-sm font-medium text-gray-700 dark:text-gray-300 hidden"></div>
         </section>
 
-        <!-- Detailed Analytics Section -->
-        <section class="space-y-6">
-            <div class="mb-2 mt-8">
-                <h3 class="text-xl font-bold text-gray-800 border-b-2 border-[#4B7293] pb-1 inline-block">Rolling Route Forecast Models</h3>
-                <p class="text-sm text-gray-500 mt-1">Timeline analysis of conditions <strong>along your planned route</strong> up to 7 days out. Time represents estimated arrival at future coordinates.</p>
+        <section class="card">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1 flex items-center gap-2">🗺️ Interactive Tactical Map</h3>
+            <div class="mb-4 bg-green-50 dark:bg-green-900/20 p-3 rounded border border-green-200 dark:border-green-800 flex items-start gap-3">
+                <span class="text-xl">💡</span>
+                <p class="text-sm text-gray-700 dark:text-gray-300">
+                    <strong>Drag any marker (Start, 20%, 40%, etc.) to customize your route path.</strong><br>
+                    The system automatically recalculates ETAs and fetches new weather data the moment you drop a marker. <span class="font-bold underline text-green-700 dark:text-green-400">No need to click the update button.</span>
+                </p>
             </div>
+            <div id="map-container" class="border border-gray-200 dark:border-[#444]"></div>
+        </section>
 
-            <!-- Wind Dynamics Chart -->
-            <div class="card">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
+        <div id="loading-indicator" class="hidden flex-col items-center justify-center py-12">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-ocean mb-4"></div>
+            <p class="text-gray-600 dark:text-gray-400 font-medium text-center px-4">Calculating route metrics and fetching multi-point <br>meteorological & marine data...</p>
+        </div>
+
+        <div id="data-dashboard" class="space-y-8 hidden">
+            
+            <section id="kpi-section">
+                <div class="mb-4">
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white border-b-2 border-[#4B7293] pb-1 inline-block">Calculated Route Averages</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Snapshot of conditions across the entirety of your planned voyage duration.</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="card flex flex-col justify-between border-t-4 border-[#4B7293]">
+                        <div class="flex justify-between items-start">
+                            <span class="text-gray-500 dark:text-gray-400 font-medium text-sm uppercase tracking-wider">Avg Wind</span>
+                            <span class="text-2xl text-[#4B7293]">🌬️</span>
+                        </div>
+                        <div class="mt-4">
+                            <span id="kpi-wind" class="text-4xl font-bold text-gray-900 dark:text-white">--</span>
+                            <span class="text-gray-500 dark:text-gray-400 ml-1 font-medium">kts</span>
+                        </div>
+                        <p id="kpi-wind-max" class="text-sm text-gray-500 dark:text-gray-400 mt-2">Max Gusts: -- kts</p>
+                    </div>
+
+                    <div class="card flex flex-col justify-between border-t-4 border-[#4A7C59]">
+                        <div class="flex justify-between items-start">
+                            <span class="text-gray-500 dark:text-gray-400 font-medium text-sm uppercase tracking-wider">Avg Wave</span>
+                            <span class="text-2xl text-[#4A7C59]">〰️</span>
+                        </div>
+                        <div class="mt-4">
+                            <span id="kpi-wave" class="text-4xl font-bold text-gray-900 dark:text-white">--</span>
+                            <span class="text-gray-500 dark:text-gray-400 ml-1 font-medium">m</span>
+                        </div>
+                        <p id="kpi-wave-max" class="text-sm text-gray-500 dark:text-gray-400 mt-2">Max Height: -- m</p>
+                    </div>
+
+                    <div class="card flex flex-col justify-between border-t-4 border-gray-400">
+                        <div class="flex justify-between items-start">
+                            <span class="text-gray-500 dark:text-gray-400 font-medium text-sm uppercase tracking-wider">Mean Press</span>
+                            <span class="text-2xl text-gray-500 dark:text-gray-400">⏬</span>
+                        </div>
+                        <div class="mt-4">
+                            <span id="kpi-pressure" class="text-4xl font-bold text-gray-900 dark:text-white">--</span>
+                            <span class="text-gray-500 dark:text-gray-400 ml-1 font-medium">hPa</span>
+                        </div>
+                        <p id="kpi-pressure-min" class="text-sm text-gray-500 dark:text-gray-400 mt-2">Min Drop: -- hPa</p>
+                    </div>
+
+                    <div id="kpi-status-card" class="card flex flex-col justify-between border-t-4 transition-colors duration-300">
+                        <div class="flex justify-between items-start">
+                            <span class="text-gray-700 dark:text-gray-300 font-bold text-sm uppercase tracking-wider">Overall Status</span>
+                            <span id="kpi-status-icon" class="text-2xl">--</span>
+                        </div>
+                        <div class="mt-4">
+                            <span id="kpi-status-text" class="text-2xl font-bold">--</span>
+                        </div>
+                        <p id="kpi-status-desc" class="text-sm text-gray-600 dark:text-gray-400 mt-2">Based on max conditions.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card bg-gray-50 dark:bg-transparent">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 border-b dark:border-[#333] pb-4 gap-4">
                     <div>
-                        <h4 class="text-lg font-bold text-gray-800 flex items-center gap-2"><span>🌬️</span> Wind Dynamics (Speed & Gusts)</h4>
-                        <p class="text-sm text-gray-500">Forecasted base wind speed and potential gusts in knots over the selected phase duration.</p>
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">📍 Tactical Waypoints</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Forecast conditions aligned perfectly with your ETA at each point.</p>
+                    </div>
+                    <button onclick="app.toggleViewMode()" id="btn-toggle-view" class="px-4 py-2 bg-white dark:bg-[#2A2A2A] border border-gray-300 dark:border-[#444] rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-[#333] transition-colors">
+                        👁️ View Full Route Table
+                    </button>
+                </div>
+
+                <div class="flex flex-wrap gap-2 mb-4 border-b dark:border-[#333] pb-2" id="waypoint-tabs"></div>
+
+                <div id="waypoint-content" class="bg-white dark:bg-[#1E1E1E] p-4 rounded-lg border border-gray-200 dark:border-[#333] overflow-x-auto"></div>
+            </section>
+
+            <section class="space-y-6">
+                <div class="mb-2 mt-8">
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white border-b-2 border-ocean pb-1 inline-block">Rolling Forecast Models</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Timeline analysis interpolated along your active track. <strong>Hover over lines for expected GPS location.</strong></p>
+                </div>
+
+                <div class="card">
+                    <div class="mb-4">
+                        <h4 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2"><span>🌬️</span> Wind Dynamics along Route</h4>
+                    </div>
+                    <div class="chart-container"><canvas id="windChart"></canvas></div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card">
+                        <div class="mb-4">
+                            <h4 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2"><span>〰️</span> Sea State (Significant Wave Height)</h4>
+                        </div>
+                        <div class="chart-container"><canvas id="waveChart"></canvas></div>
+                    </div>
+
+                    <div class="card">
+                        <div class="mb-4">
+                            <h4 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2"><span>⏬</span> Barometric Pressure</h4>
+                        </div>
+                        <div class="chart-container"><canvas id="pressureChart"></canvas></div>
                     </div>
                 </div>
-                <!-- CRITICAL: Chart Container -->
-                <div class="chart-container">
-                    <canvas id="windChart"></canvas>
-                </div>
-            </div>
+            </section>
+        </div>
 
-            <!-- 2-Column Grid for Waves and Pressure -->
+        <section class="mt-12 mb-8 pt-8 border-t border-gray-300 dark:border-[#444]">
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Professional Wide-Area Tools</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Strategic synoptic overviews utilizing third-party services.</p>
+            
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Sea State Chart -->
-                <div class="card">
-                    <div class="mb-4">
-                        <h4 class="text-lg font-bold text-gray-800 flex items-center gap-2"><span>〰️</span> Sea State Analysis</h4>
-                        <p class="text-sm text-gray-500">Expected significant wave heights (meters). Crucial for calculating hull stress and crew fatigue.</p>
+                <div class="card p-0 overflow-hidden shadow-md border-t-4 border-ocean">
+                    <div class="p-4 bg-gray-50 dark:bg-[#2A2A2A] border-b border-gray-200 dark:border-[#444]">
+                        <h4 class="font-bold text-gray-900 dark:text-white flex items-center gap-2"><span>🌐</span> PredictWind Routing (HK - Taiwan)</h4>
                     </div>
-                    <!-- CRITICAL: Chart Container -->
-                    <div class="chart-container">
-                        <canvas id="waveChart"></canvas>
-                    </div>
+                    <iframe src="https://forecast.predictwind.com/embed/HKTaiwan" width="100%" height="500" frameborder="0" style="border:0;" allowfullscreen></iframe>
                 </div>
 
-                <!-- Barometric Pressure Chart -->
-                <div class="card">
-                    <div class="mb-4">
-                        <h4 class="text-lg font-bold text-gray-800 flex items-center gap-2"><span>⏬</span> Barometric Trends</h4>
-                        <p class="text-sm text-gray-500">Atmospheric pressure (hPa). Steep drops indicate approaching cyclonic activity or squalls.</p>
+                <div class="card p-0 overflow-hidden shadow-md border-t-4 border-ocean">
+                    <div class="p-4 bg-gray-50 dark:bg-[#2A2A2A] border-b border-gray-200 dark:border-[#444]">
+                        <h4 class="font-bold text-gray-900 dark:text-white flex items-center gap-2"><span>🌧️</span> RainViewer Precipitation Radar</h4>
                     </div>
-                    <!-- CRITICAL: Chart Container -->
-                    <div class="chart-container">
-                        <canvas id="pressureChart"></canvas>
-                    </div>
+                    <iframe id="rainviewer-frame" src="https://www.rainviewer.com/map.html?loc=22.3,114.1,6&oFa=0&oC=0&oU=0&oCS=1&oF=0&oAP=1&c=1&o=83&lm=0&layer=radar&sm=1&sn=1" width="100%" height="500" frameborder="0" style="border:0;" allowfullscreen></iframe>
                 </div>
-            </div>
-        </section>
-
-        <!-- Tactical Summary Text Block -->
-        <section class="card bg-gray-50 border border-gray-200 mt-8 hidden" id="summary-section">
-            <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2"><span>📋</span> Route Analysis Summary</h3>
-            <div id="tactical-summary" class="text-gray-700 leading-relaxed space-y-3">
-                <!-- Dynamically populated via JS -->
             </div>
         </section>
 
     </main>
 
-    <!-- Application Logic -->
     <script>
-        let windChartInst, waveChartInst, pressureChartInst;
-        let boundaryMap, markerStart, markerDest, routeLine;
-        let mapTileLayer;
-
-        const MAP_TILES_LIGHT = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-        const MAP_TILES_DARK = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+        const themeManager = {
+            currentTheme: 'light',
+            init: function() {
+                if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    this.setTheme('dark');
+                } else { this.setTheme('light'); }
+            },
+            setTheme: function(theme) {
+                this.currentTheme = theme;
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                    document.getElementById('btn-dark').classList.add('bg-[#444]', 'text-white', 'shadow-sm');
+                    document.getElementById('btn-dark').classList.remove('bg-transparent');
+                    document.getElementById('btn-light').classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
+                    document.getElementById('btn-light').classList.add('bg-transparent', 'text-gray-500');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    document.getElementById('btn-light').classList.add('bg-white', 'shadow-sm', 'text-gray-900');
+                    document.getElementById('btn-light').classList.remove('bg-transparent');
+                    document.getElementById('btn-dark').classList.remove('bg-[#444]', 'shadow-sm', 'text-white');
+                    document.getElementById('btn-dark').classList.add('bg-transparent', 'text-gray-500');
+                }
+                document.getElementById('btn-auto').classList.remove('text-ocean', 'font-bold');
+                if(app.windChartInst) app.updateChartTheme();
+            },
+            setAuto: function() {
+                const hour = new Date().getHours();
+                if (hour >= 6 && hour < 18) this.setTheme('light'); else this.setTheme('dark');
+                document.getElementById('btn-auto').classList.add('text-ocean', 'font-bold');
+            }
+        };
 
         Chart.defaults.font.family = "'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
         Chart.defaults.color = '#718096';
+        Chart.defaults.maintainAspectRatio = false;
 
         const app = {
-            theme: 'auto', // 'day', 'dark', 'auto'
-            sunrise: null,
-            sunset: null,
-            routeData: null,
-            routeWaypoints: [],
-            waypointData: [],
+            map: null,
+            routePolyline: null,
+            markersLayer: null,
+            routePoints: [],
+            viewMode: 'tabs',
+            activeTab: 0,
+            
+            windChartInst: null, waveChartInst: null, pressureChartInst: null,
+            chartData: { labels: [], locations: [], wind: [], gusts: [], wave: [], pressure: [] },
 
             init: function() {
-                this.initCharts();
+                themeManager.init();
+                this.setDefaultDepartureTime();
                 this.initMap();
-                
-                // Initial theme setup
-                const savedTheme = localStorage.getItem('weatherNavTheme') || 'auto';
-                this.setTheme(savedTheme);
-
-                // Initial map setup (default to HK -> Philippines for context)
-                this.calculateRouteAndFetchWeather();
+                setTimeout(() => { this.handleNewRoute(); }, 300);
             },
 
-            setTheme: function(mode) {
-                this.theme = mode;
-                localStorage.setItem('weatherNavTheme', mode);
-                const html = document.documentElement;
-                const hour = new Date().getHours();
-                
-                let isDark = false;
+            setDefaultDepartureTime: function() {
+                const now = new Date();
+                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                document.getElementById('route-departure').value = now.toISOString().slice(0, 16);
+            },
 
-                // Reset Button UI
-                ['day', 'dark', 'auto'].forEach(t => {
-                    const btn = document.getElementById(`theme-${t}`);
-                    btn.className = 'px-3 py-1 text-sm rounded-md font-medium transition-colors text-gray-500 hover:text-gray-800';
+            initMap: function() {
+                // Focus tighter around HK & Taiwan
+                this.map = L.map('map-container', {
+                    minZoom: 4,
+                    worldCopyJump: false
+                }).setView([23.7, 117.9], 6);
+
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '© OpenStreetMap contributors © CARTO',
+                    maxZoom: 12,
+                    minZoom: 4,
+                    noWrap: true // Prevents infinite horizontal scrolling
+                }).addTo(this.map);
+                
+                this.routePolyline = L.polyline([], {color: '#4B7293', weight: 4, dashArray: '5, 10'}).addTo(this.map);
+                this.markersLayer = L.layerGroup().addTo(this.map);
+            },
+
+            formatCoordinate: function(lat, lon) {
+                const ns = lat >= 0 ? 'N' : 'S';
+                const ew = lon >= 0 ? 'E' : 'W';
+                const fLat = (Math.abs(lat)).toFixed(2);
+                const fLon = (Math.abs(lon)).toFixed(2);
+                return `${fLat}°${ns}, ${fLon}°${ew}`;
+            },
+
+            calculateDistance: function(lat1, lon1, lat2, lon2) {
+                const R = 3440.065; 
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLon = (lon2 - lon1) * Math.PI / 180;
+                const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+                return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+            },
+
+            handleReverseRoute: function() {
+                const sLat = document.getElementById('start-lat').value;
+                const sLon = document.getElementById('start-lon').value;
+                document.getElementById('start-lat').value = document.getElementById('dest-lat').value;
+                document.getElementById('start-lon').value = document.getElementById('dest-lon').value;
+                document.getElementById('dest-lat').value = sLat;
+                document.getElementById('dest-lon').value = sLon;
+                this.handleNewRoute();
+            },
+
+            handleNewRoute: function() {
+                const sLat = parseFloat(document.getElementById('start-lat').value);
+                const sLon = parseFloat(document.getElementById('start-lon').value);
+                const dLat = parseFloat(document.getElementById('dest-lat').value);
+                const dLon = parseFloat(document.getElementById('dest-lon').value);
+                
+                if (isNaN(sLat) || isNaN(sLon) || isNaN(dLat) || isNaN(dLon)) {
+                    alert("Please enter valid numerical coordinates."); return;
+                }
+
+                const fractions = [0, 0.2, 0.4, 0.6, 0.8, 1.0];
+                this.routePoints = fractions.map((f, index) => ({
+                    lat: sLat + (dLat - sLat) * f,
+                    lon: sLon + (dLon - sLon) * f,
+                    label: index === 0 ? "Start" : index === 5 ? "Dest" : `${f*100}%`,
+                    index: index
+                }));
+
+                this.rebuildMarkers();
+                this.fetchAndUpdate();
+            },
+
+            rebuildMarkers: function() {
+                this.markersLayer.clearLayers();
+                this.routePoints.forEach((pt, index) => {
+                    let cClass = index === 0 ? 'wp-start' : (index === 5 ? 'wp-dest' : 'wp-mid');
+                    const icon = L.divIcon({
+                        className: 'custom-leaflet-icon',
+                        html: `<div class="wp-marker ${cClass}" style="width:24px; height:24px;">${index}</div>`,
+                        iconSize: [24, 24], iconAnchor: [12, 12], tooltipAnchor: [12, 0]
+                    });
+
+                    const marker = L.marker([pt.lat, pt.lon], { icon: icon, draggable: true }).addTo(this.markersLayer);
+                    marker.bindTooltip(`<strong>${pt.label}</strong>`, { direction: 'top', className: 'font-mono text-xs bg-white/90 border-0 shadow-sm' });
+                    
+                    marker.on('dragend', (e) => {
+                        const newPos = e.target.getLatLng();
+                        this.routePoints[index].lat = newPos.lat;
+                        this.routePoints[index].lon = newPos.lng;
+                        
+                        if (index === 0) {
+                            document.getElementById('start-lat').value = newPos.lat.toFixed(4);
+                            document.getElementById('start-lon').value = newPos.lng.toFixed(4);
+                        } else if (index === 5) {
+                            document.getElementById('dest-lat').value = newPos.lat.toFixed(4);
+                            document.getElementById('dest-lon').value = newPos.lng.toFixed(4);
+                        }
+
+                        this.fetchAndUpdate(); 
+                    });
+                    
+                    pt.marker = marker;
                 });
-                
-                document.getElementById(`theme-${mode}`).className = 'px-3 py-1 text-sm rounded-md font-medium transition-colors bg-white shadow-sm text-gray-800';
+            },
 
-                // Determine Darkness
-                if (mode === 'dark') {
-                    isDark = true;
-                } else if (mode === 'auto') {
-                    // Use API sunrise/sunset if available, else default 18:00 - 06:00
-                    if (this.sunrise && this.sunset) {
-                        const now = new Date();
-                        if (now < this.sunrise || now > this.sunset) isDark = true;
-                    } else {
-                        if (hour >= 18 || hour < 6) isDark = true;
-                    }
+            fetchAndUpdate: async function() {
+                const speed = parseFloat(document.getElementById('vessel-speed').value);
+                const depTimeStr = document.getElementById('route-departure').value;
+                if (isNaN(speed) || speed <= 0 || !depTimeStr) return;
+                
+                const startTimeMs = new Date(depTimeStr).getTime();
+
+                const btn = document.getElementById('btn-calculate');
+                btn.innerHTML = `<span>⏳</span> Processing...`; btn.disabled = true;
+                document.getElementById('loading-indicator').classList.remove('hidden');
+                document.getElementById('data-dashboard').classList.add('hidden');
+
+                let totalDist = 0;
+                this.routePoints[0].eta = new Date(startTimeMs);
+                const latlngs = [ [this.routePoints[0].lat, this.routePoints[0].lon] ];
+
+                for(let i=1; i<6; i++) {
+                    const prev = this.routePoints[i-1];
+                    const curr = this.routePoints[i];
+                    const legDist = this.calculateDistance(prev.lat, prev.lon, curr.lat, curr.lon);
+                    totalDist += legDist;
+                    curr.eta = new Date(startTimeMs + (totalDist / speed) * 3600000);
+                    latlngs.push([curr.lat, curr.lon]);
                 }
 
-                // Apply DOM Changes
-                if (isDark) {
-                    html.classList.add('dark');
-                    if(document.getElementById(`theme-${mode}`).classList.contains('bg-white')) {
-                        document.getElementById(`theme-${mode}`).classList.replace('bg-white', 'bg-gray-700');
-                        document.getElementById(`theme-${mode}`).classList.replace('text-gray-800', 'text-white');
+                const totalHours = totalDist / speed;
+
+                document.getElementById('route-summary').innerHTML = `🏁 Route Distance: <strong>${Math.round(totalDist)} NM</strong> | Est. Duration: <strong>${totalHours.toFixed(1)} Hours</strong>`;
+                document.getElementById('route-summary').classList.remove('hidden');
+                this.routePolyline.setLatLngs(latlngs);
+                
+                // Set padding to 0.3 for a tighter, cleaner view around the HK/Taiwan route
+                this.map.fitBounds(this.routePolyline.getBounds().pad(0.3));
+
+                try {
+                    const promises = this.routePoints.map(pt => {
+                        const pWeather = fetch(`https://api.open-meteo.com/v1/forecast?latitude=${pt.lat}&longitude=${pt.lon}&hourly=windspeed_10m,windgusts_10m,surface_pressure&windspeed_unit=kn`).then(r => r.json());
+                        const pMarine = fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=${pt.lat}&longitude=${pt.lon}&hourly=wave_height`).then(r => r.json()).catch(() => null); 
+                        return Promise.all([pWeather, pMarine]);
+                    });
+                    
+                    const results = await Promise.all(promises);
+
+                    this.routePoints.forEach((pt, idx) => {
+                        const [wData, mData] = results[idx];
+                        const etaIso = pt.eta.toISOString().slice(0, 13) + ":00";
+                        let timeIdx = wData.hourly.time.findIndex(t => t.startsWith(etaIso));
+                        if(timeIdx === -1) timeIdx = 0;
+
+                        pt.forecasts = [0, 12, 24].map(offsetHours => {
+                            const i = Math.min(timeIdx + offsetHours, wData.hourly.time.length - 1);
+                            const waveVal = (mData && mData.hourly && mData.hourly.wave_height && mData.hourly.wave_height[i]) ? mData.hourly.wave_height[i] : 0;
+                            return {
+                                timeLabel: offsetHours === 0 ? "ETA" : `ETA +${offsetHours}h`,
+                                actualTime: new Date(wData.hourly.time[i]).toLocaleTimeString([], {weekday:'short', hour: '2-digit', minute:'2-digit'}),
+                                wind: Math.round(wData.hourly.windspeed_10m[i] || 0),
+                                gust: Math.round(wData.hourly.windgusts_10m[i] || 0),
+                                wave: waveVal.toFixed(1),
+                                pressure: Math.round(wData.hourly.surface_pressure[i] || 1013)
+                            };
+                        });
+                    });
+
+                    this.generateRollingChartData(results, startTimeMs, totalHours);
+                    this.updateKPIs();
+                    this.buildWaypointsUI();
+                    if(!this.windChartInst) this.initCharts(); else this.updateCharts();
+
+                    document.getElementById('data-dashboard').classList.remove('hidden');
+
+                } catch (error) {
+                    console.error("API Error:", error);
+                    alert("Failed to fetch weather data. Ensure you have an internet connection.");
+                } finally {
+                    btn.innerHTML = `<span>📡</span> Generate New Route`; btn.disabled = false;
+                    document.getElementById('loading-indicator').classList.add('hidden');
+                }
+            },
+
+            generateRollingChartData: function(results, startTimeMs, totalHours) {
+                this.chartData = { labels: [], locations: [], wind: [], gusts: [], wave: [], pressure: [] };
+                
+                for(let hr=0; hr<=totalHours; hr+=3) {
+                    const tMs = startTimeMs + (hr * 3600000);
+                    const isoStr = new Date(tMs).toISOString().slice(0,13);
+                    
+                    let seg = 0;
+                    for(let i=0; i<5; i++) {
+                        if(tMs >= this.routePoints[i].eta.getTime() && tMs <= this.routePoints[i+1].eta.getTime()) { seg = i; break; }
                     }
+                    if(hr >= totalHours) seg = 4;
+
+                    const pA = this.routePoints[seg], pB = this.routePoints[seg+1];
+                    const segDur = pB.eta.getTime() - pA.eta.getTime();
+                    const frac = segDur === 0 ? 0 : (tMs - pA.eta.getTime()) / segDur;
+                    const cLat = pA.lat + frac * (pB.lat - pA.lat);
+                    const cLon = pA.lon + frac * (pB.lon - pA.lon);
+
+                    const dataIdx = frac < 0.5 ? seg : seg+1;
+                    const [wData, mData] = results[dataIdx];
+                    
+                    let timeIdx = wData.hourly.time.findIndex(t => t.startsWith(isoStr));
+                    if(timeIdx === -1) timeIdx = 0;
+
+                    const waveVal = (mData && mData.hourly && mData.hourly.wave_height) ? mData.hourly.wave_height[timeIdx] || 0 : 0;
+
+                    this.chartData.labels.push(`+${hr}h`);
+                    this.chartData.locations.push(this.formatCoordinate(cLat, cLon));
+                    this.chartData.wind.push(wData.hourly.windspeed_10m[timeIdx] || null);
+                    this.chartData.gusts.push(wData.hourly.windgusts_10m[timeIdx] || null);
+                    this.chartData.wave.push(waveVal);
+                    this.chartData.pressure.push(wData.hourly.surface_pressure[timeIdx] || null);
+                }
+            },
+
+            updateKPIs: function() {
+                const validWind = this.chartData.wind.filter(v => v !== null);
+                const validGusts = this.chartData.gusts.filter(v => v !== null);
+                const validWave = this.chartData.wave.filter(v => v !== null && v > 0);
+                const validPress = this.chartData.pressure.filter(v => v !== null);
+
+                const avgW = validWind.length ? Math.round(validWind.reduce((a,b)=>a+b,0)/validWind.length) : 0;
+                const maxG = validGusts.length ? Math.round(Math.max(...validGusts)) : 0;
+                const avgWv = validWave.length ? (validWave.reduce((a,b)=>a+b,0)/validWave.length).toFixed(1) : 0;
+                const maxWv = validWave.length ? Math.max(...validWave).toFixed(1) : 0;
+                const avgP = validPress.length ? Math.round(validPress.reduce((a,b)=>a+b,0)/validPress.length) : 0;
+                const minP = validPress.length ? Math.round(Math.min(...validPress)) : 0;
+
+                document.getElementById('kpi-wind').innerText = avgW;
+                document.getElementById('kpi-wind-max').innerText = `Max Gusts: ${maxG} kts`;
+                document.getElementById('kpi-wave').innerText = avgWv;
+                document.getElementById('kpi-wave-max').innerText = `Max Height: ${maxWv} m`;
+                document.getElementById('kpi-pressure').innerText = avgP;
+                document.getElementById('kpi-pressure-min').innerText = `Min Drop: ${minP} hPa`;
+
+                const statusCard = document.getElementById('kpi-status-card');
+                const statusIcon = document.getElementById('kpi-status-icon');
+                const statusText = document.getElementById('kpi-status-text');
+                const statusDesc = document.getElementById('kpi-status-desc');
+
+                const isDark = document.documentElement.classList.contains('dark');
+                statusCard.className = "card flex flex-col justify-between border-t-4 transition-colors duration-300";
+
+                if (maxG >= 35 || maxWv >= 4.0) {
+                    statusCard.classList.add('border-danger');
+                    if(!isDark) statusCard.style.backgroundColor = '#FEF5F0';
+                    statusIcon.innerText = "⚠️";
+                    statusText.innerText = "CAUTION";
+                    statusText.className = "text-2xl font-bold text-danger";
+                    statusDesc.innerText = "Heavy weather parameters exceeded on route.";
                 } else {
-                    html.classList.remove('dark');
+                    statusCard.classList.add('border-safe');
+                    if(!isDark) statusCard.style.backgroundColor = '#F2F7F4';
+                    statusIcon.innerText = "✅";
+                    statusText.innerText = "GO";
+                    statusText.className = "text-2xl font-bold text-safe";
+                    statusDesc.innerText = "Route conditions remain within safe limits.";
                 }
-
-                this.updateMapTheme(isDark);
-                this.updateChartTheme(isDark);
+                
+                if(isDark) statusCard.style.backgroundColor = '#1E1E1E';
             },
 
-            updateMapTheme: function(isDark) {
-                if(!boundaryMap) return;
-                const url = isDark ? MAP_TILES_DARK : MAP_TILES_LIGHT;
-                if(mapTileLayer) {
-                    mapTileLayer.setUrl(url);
+            toggleViewMode: function() {
+                this.viewMode = this.viewMode === 'tabs' ? 'full' : 'tabs';
+                const btn = document.getElementById('btn-toggle-view');
+                btn.innerHTML = this.viewMode === 'tabs' ? '👁️ View Full Route Table' : '📑 View Tabbed Mode';
+                this.buildWaypointsUI();
+            },
+
+            buildWaypointsUI: function() {
+                const tabsContainer = document.getElementById('waypoint-tabs');
+                const content = document.getElementById('waypoint-content');
+                
+                if (this.viewMode === 'tabs') {
+                    tabsContainer.classList.remove('hidden');
+                    tabsContainer.innerHTML = '';
+                    this.routePoints.forEach((pt, idx) => {
+                        const btn = document.createElement('button');
+                        btn.className = `px-4 py-2 text-sm font-medium transition-colors ${idx === this.activeTab ? 'tab-active' : 'tab-inactive hover:text-gray-900 dark:hover:text-white'}`;
+                        btn.innerText = pt.label;
+                        btn.onclick = () => { this.activeTab = idx; this.buildWaypointsUI(); };
+                        tabsContainer.appendChild(btn);
+                    });
+                    content.innerHTML = this.generateSingleCardHtml(this.routePoints[this.activeTab]);
+                } else {
+                    tabsContainer.classList.add('hidden');
+                    
+                    let html = `<div class="overflow-x-auto border border-gray-200 dark:border-[#444] rounded-lg">
+                        <table class="min-w-full text-left text-sm whitespace-nowrap">
+                            <thead class="bg-gray-100 dark:bg-[#2A2A2A] text-gray-700 dark:text-gray-300">
+                                <tr>
+                                    <th class="px-4 py-3">Waypoint / GPS</th>
+                                    <th class="px-4 py-3">Forecast Time</th>
+                                    <th class="px-4 py-3">Wind Speed</th>
+                                    <th class="px-4 py-3">Waves</th>
+                                    <th class="px-4 py-3">Pressure</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 dark:divide-[#333]">`;
+
+                    this.routePoints.forEach((pt, ptIdx) => {
+                        pt.forecasts.forEach((f, fIdx) => {
+                            let topBorder = (fIdx === 0 && ptIdx !== 0) ? 'border-t-2 border-gray-300 dark:border-[#555]' : '';
+                            html += `<tr class="hover:bg-gray-50 dark:hover:bg-[#2A2A2A] transition-colors ${topBorder}">`;
+                            
+                            if (fIdx === 0) {
+                                html += `<td rowspan="3" class="px-4 py-3 align-top bg-white dark:bg-[#1E1E1E]">
+                                    <div class="font-bold text-ocean uppercase tracking-wider mb-1">${pt.label}</div>
+                                    <div class="text-[11px] font-mono text-gray-500 bg-gray-100 dark:bg-[#2A2A2A] inline-block px-2 py-1 rounded">📍 ${this.formatCoordinate(pt.lat, pt.lon)}</div>
+                                </td>`;
+                            }
+
+                            let windDisplay = `${f.wind} kt`;
+                            if (f.gust > f.wind + 2) windDisplay += ` <span class="text-xs text-danger font-bold ml-1">(Gusts ${f.gust})</span>`;
+                            let waveStyle = f.wave > 3 ? 'text-danger font-bold' : '';
+
+                            html += `
+                                <td class="px-4 py-3"><span class="font-bold">${f.timeLabel}</span> <span class="text-[10px] text-gray-500 ml-2">${f.actualTime}</span></td>
+                                <td class="px-4 py-3">${windDisplay}</td>
+                                <td class="px-4 py-3 ${waveStyle}">${f.wave}m</td>
+                                <td class="px-4 py-3">${f.pressure} hPa</td>
+                            </tr>`;
+                        });
+                    });
+
+                    html += `</tbody></table></div>`;
+                    content.innerHTML = html;
                 }
             },
 
-            updateChartTheme: function(isDark) {
-                const textColor = isDark ? '#94a3b8' : '#718096';
-                const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+            generateSingleCardHtml: function(pt) {
+                let html = `
+                    <div class="mb-3 flex justify-between items-end">
+                        <div>
+                            <div class="text-xs uppercase tracking-wider text-ocean font-bold mb-1">${pt.label} Waypoint</div>
+                            <div class="text-xs font-mono text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-[#2A2A2A] inline-block px-2 py-1 rounded border border-gray-200 dark:border-[#444]">📍 ${this.formatCoordinate(pt.lat, pt.lon)}</div>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-left text-sm whitespace-nowrap">
+                            <thead class="uppercase tracking-wider border-b-2 dark:border-[#444] text-gray-500 dark:text-gray-400 text-xs">
+                                <tr><th class="px-3 py-2">Time</th><th class="px-3 py-2">Wind</th><th class="px-3 py-2">Wave</th><th class="px-3 py-2">Press</th></tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 dark:divide-[#333] text-gray-800 dark:text-gray-200">
+                `;
+                pt.forecasts.forEach(f => {
+                    let windDisplay = `${f.wind} kt`;
+                    if (f.gust > f.wind + 2) windDisplay += `<br><span class="text-xs text-danger font-bold">(Gusts ${f.gust})</span>`;
+                    let waveStyle = f.wave > 3 ? 'text-danger font-bold' : '';
+                    html += `
+                        <tr class="hover:bg-gray-50 dark:hover:bg-[#2A2A2A]">
+                            <td class="px-3 py-2"><span class="font-bold block">${f.timeLabel}</span><span class="text-[10px] text-gray-500">${f.actualTime}</span></td>
+                            <td class="px-3 py-2">${windDisplay}</td>
+                            <td class="px-3 py-2 ${waveStyle}">${f.wave}m</td>
+                            <td class="px-3 py-2">${f.pressure}</td>
+                        </tr>
+                    `;
+                });
+                return html + `</tbody></table></div>`;
+            },
+
+            updateChartTheme: function() {
+                const isDark = document.documentElement.classList.contains('dark');
+                Chart.defaults.color = isDark ? '#A0AEC0' : '#718096';
+                Chart.defaults.plugins.tooltip.backgroundColor = isDark ? 'rgba(30, 30, 30, 0.95)' : 'rgba(255, 255, 255, 0.95)';
+                Chart.defaults.plugins.tooltip.titleColor = isDark ? '#F7FAFC' : '#1a202c';
+                Chart.defaults.plugins.tooltip.bodyColor = isDark ? '#E2E8F0' : '#4a5568';
                 
-                Chart.defaults.color = textColor;
-                const charts = [windChartInst, waveChartInst, pressureChartInst];
-                
-                charts.forEach(chart => {
-                    if(chart && chart.options.scales) {
-                        if(chart.options.scales.x) {
-                            chart.options.scales.x.ticks.color = textColor;
-                            chart.options.scales.x.grid.color = gridColor;
-                        }
-                        if(chart.options.scales.y) {
-                            chart.options.scales.y.ticks.color = textColor;
-                            chart.options.scales.y.grid.color = gridColor;
-                        }
+                [this.windChartInst, this.waveChartInst, this.pressureChartInst].forEach(chart => {
+                    if(chart) {
+                        if(chart.options.scales.x) { chart.options.scales.x.ticks.color = Chart.defaults.color; chart.options.scales.x.grid.color = isDark ? '#333' : '#E2E8F0'; }
+                        if(chart.options.scales.y) { chart.options.scales.y.ticks.color = Chart.defaults.color; chart.options.scales.y.grid.color = isDark ? '#333' : '#E2E8F0'; }
                         chart.update();
                     }
                 });
             },
 
-            initMap: function() {
-                // Set initial view roughly between Hong Kong and Keelung
-                boundaryMap = L.map('boundary-map').setView([23.7, 117.95], 6);
-                
-                const isDark = document.documentElement.classList.contains('dark');
-                mapTileLayer = L.tileLayer(isDark ? MAP_TILES_DARK : MAP_TILES_LIGHT, {
-                    attribution: '&copy; OpenStreetMap',
-                    maxZoom: 18,
-                }).addTo(boundaryMap);
-
-                // Start Marker (Green)
-                const startIcon = L.divIcon({className: 'text-2xl', html: '🟢', iconSize: [24, 24], iconAnchor: [12, 12]});
-                markerStart = L.marker([22.2500, 114.1600], {icon: startIcon, draggable: true}).addTo(boundaryMap);
-                markerStart.bindPopup("Start Position").openPopup();
-
-                // Dest Marker (Red)
-                const destIcon = L.divIcon({className: 'text-2xl', html: '🔴', iconSize: [24, 24], iconAnchor: [12, 12]});
-                markerDest = L.marker([25.1500, 121.7400], {icon: destIcon, draggable: true}).addTo(boundaryMap);
-                markerDest.bindPopup("Destination");
-
-                routeLine = L.polyline([], {color: '#D97736', weight: 3, dashArray: '10, 10'}).addTo(boundaryMap);
-
-                // Event Listeners for Map Dragging
-                markerStart.on('dragend', (e) => {
-                    document.getElementById('start-lat').value = e.target.getLatLng().lat.toFixed(4);
-                    document.getElementById('start-lon').value = e.target.getLatLng().lng.toFixed(4);
-                    this.drawRouteLine();
-                });
-                markerDest.on('dragend', (e) => {
-                    document.getElementById('dest-lat').value = e.target.getLatLng().lat.toFixed(4);
-                    document.getElementById('dest-lon').value = e.target.getLatLng().lng.toFixed(4);
-                    this.drawRouteLine();
-                });
-
-                this.drawRouteLine();
-            },
-
-            drawRouteLine: function() {
-                const sLat = parseFloat(document.getElementById('start-lat').value);
-                const sLon = parseFloat(document.getElementById('start-lon').value);
-                const dLat = parseFloat(document.getElementById('dest-lat').value);
-                const dLon = parseFloat(document.getElementById('dest-lon').value);
-
-                if(!isNaN(sLat) && !isNaN(dLat)) {
-                    routeLine.setLatLngs([[sLat, sLon], [dLat, dLon]]);
-                    markerStart.setLatLng([sLat, sLon]);
-                    markerDest.setLatLng([dLat, dLon]);
-                    
-                    const bounds = L.latLngBounds([sLat, sLon], [dLat, dLon]);
-                    boundaryMap.fitBounds(bounds, {padding: [50, 50]});
-
-                    // Update RainViewer Map Iframe dynamically to Start Position
-                    const rvFrame = document.getElementById('rainviewer-frame');
-                    if(rvFrame) rvFrame.src = `https://www.rainviewer.com/map.html?loc=${sLat},${sLon},6&oFa=0&oC=0&oU=0&oCS=1&oF=0&oM=0&color=2&app=1`;
-                }
-            },
-
-            getDeviceLocation: function() {
-                if ("geolocation" in navigator) {
-                    const btn = document.getElementById('btn-fetch');
-                    btn.innerHTML = "Fetching GPS...";
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            document.getElementById('start-lat').value = position.coords.latitude.toFixed(4);
-                            document.getElementById('start-lon').value = position.coords.longitude.toFixed(4);
-                            this.drawRouteLine();
-                            btn.innerHTML = "<span>📡</span> Generate Route Forecast";
-                        },
-                        (error) => {
-                            alert("GPS Error. Ensure Location Services are enabled.");
-                            btn.innerHTML = "<span>📡</span> Generate Route Forecast";
-                        },
-                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-                    );
-                } else {
-                    alert("Geolocation not supported.");
-                }
-            },
-
-            reverseRoute: function() {
-                const sLatEl = document.getElementById('start-lat');
-                const sLonEl = document.getElementById('start-lon');
-                const dLatEl = document.getElementById('dest-lat');
-                const dLonEl = document.getElementById('dest-lon');
-
-                const tempLat = sLatEl.value;
-                const tempLon = sLonEl.value;
-                
-                sLatEl.value = dLatEl.value;
-                sLonEl.value = dLonEl.value;
-                
-                dLatEl.value = tempLat;
-                dLonEl.value = tempLon;
-
-                this.drawRouteLine();
-            },
-
-            // Haversine formula for distance in Nautical Miles
-            calculateDistanceNM: function(lat1, lon1, lat2, lon2) {
-                const R = 3440.065; // Earth radius in NM
-                const dLat = (lat2 - lat1) * Math.PI / 180;
-                const dLon = (lon2 - lon1) * Math.PI / 180;
-                const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                        Math.sin(dLon/2) * Math.sin(dLon/2);
-                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-                return R * c;
-            },
-
-            interpolatePoint: function(lat1, lon1, lat2, lon2, fraction) {
+            getTooltipConfig: function(yUnit) {
                 return {
-                    lat: lat1 + (lat2 - lat1) * fraction,
-                    lon: lon1 + (lon2 - lon1) * fraction
+                    callbacks: {
+                        label: function(ctx) { return (ctx.dataset.label ? ctx.dataset.label + ': ' : '') + ctx.parsed.y + ' ' + yUnit; },
+                        footer: function(items) { return '📍 ' + app.chartData.locations[items[0].dataIndex]; }
+                    },
+                    padding: 10, footerFont: { size: 11, family: 'monospace' }, footerColor: '#888'
                 };
-            },
-
-            showStatus: function(msg, isError=false) {
-                const el = document.getElementById('api-status-msg');
-                el.innerText = msg;
-                el.className = `mt-3 p-3 rounded-md text-sm font-bold block ${isError ? 'bg-red-100 text-red-700 border border-red-300' : 'bg-green-100 text-green-800 border border-green-300'}`;
-                el.classList.remove('hidden');
-                setTimeout(() => el.classList.add('hidden'), 5000);
-            },
-
-            calculateRouteAndFetchWeather: async function() {
-                const btn = document.getElementById('btn-fetch');
-                btn.innerHTML = "⏳ Computing & Fetching...";
-                btn.disabled = true;
-
-                try {
-                    const sLat = parseFloat(document.getElementById('start-lat').value);
-                    const sLon = parseFloat(document.getElementById('start-lon').value);
-                    const dLat = parseFloat(document.getElementById('dest-lat').value);
-                    const dLon = parseFloat(document.getElementById('dest-lon').value);
-                    const speedKts = parseFloat(document.getElementById('vessel-speed').value) || 5;
-
-                    this.drawRouteLine();
-
-                    // Calculate Logistics
-                    const distNM = this.calculateDistanceNM(sLat, sLon, dLat, dLon);
-                    const hoursTotal = distNM / speedKts;
-                    const daysTotal = hoursTotal / 24;
-
-                    document.getElementById('meta-dist').innerText = Math.round(distNM);
-                    document.getElementById('meta-time').innerText = daysTotal.toFixed(1);
-                    
-                    const arrivalDate = new Date();
-                    arrivalDate.setHours(arrivalDate.getHours() + hoursTotal);
-                    document.getElementById('meta-arrival').innerText = arrivalDate.toLocaleDateString() + ' ' + arrivalDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                    document.getElementById('route-meta').classList.remove('hidden');
-
-                    this.routeWaypoints = [];
-                    const fractions = [0, 0.2, 0.4, 0.6, 0.8, 1.0];
-                    const wpLabels = ['Start (0%)', '20% Route', '40% Route', '60% Route', '80% Route', 'Destination'];
-                    
-                    let lats = [];
-                    let lons = [];
-
-                    fractions.forEach((frac, i) => {
-                        const pt = this.interpolatePoint(sLat, sLon, dLat, dLon, frac);
-                        this.routeWaypoints.push({ 
-                            label: wpLabels[i], 
-                            fraction: frac, 
-                            timeOffsetHours: hoursTotal * frac, 
-                            pt: pt 
-                        });
-                        lats.push(pt.lat.toFixed(4));
-                        lons.push(pt.lon.toFixed(4));
-                    });
-
-                    const latStr = lats.join(',');
-                    const lonStr = lons.join(',');
-
-                    // Fetch Weather (Wind/Pressure/Sunset)
-                    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latStr}&longitude=${lonStr}&hourly=wind_speed_10m,wind_gusts_10m,surface_pressure&daily=sunrise,sunset&wind_speed_unit=kn&timezone=auto`;
-                    
-                    // Fetch Marine (Waves)
-                    const marineUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${latStr}&longitude=${lonStr}&hourly=wave_height&timezone=auto`;
-
-                    const [weatherRes, marineRes] = await Promise.all([
-                        fetch(weatherUrl),
-                        fetch(marineUrl)
-                    ]);
-
-                    if(!weatherRes.ok) throw new Error("Weather API Error");
-                    
-                    const weatherDataRaw = await weatherRes.json();
-                    let marineDataRaw = null;
-                    if(marineRes.ok) marineDataRaw = await marineRes.json();
-
-                    // Open Meteo returns an object for 1 coord, but an array for multiple coords.
-                    const weatherDataArray = Array.isArray(weatherDataRaw) ? weatherDataRaw : [weatherDataRaw];
-                    const marineDataArray = marineDataRaw ? (Array.isArray(marineDataRaw) ? marineDataRaw : [marineDataRaw]) : [];
-
-                    // Setup Auto Theme based on Start Position Today
-                    if(weatherDataArray[0].daily && weatherDataArray[0].daily.sunrise) {
-                        this.sunrise = new Date(weatherDataArray[0].daily.sunrise[0]);
-                        this.sunset = new Date(weatherDataArray[0].daily.sunset[0]);
-                        if(this.theme === 'auto') this.setTheme('auto'); // Trigger re-eval
-                    }
-
-                    this.processRouteData(weatherDataArray, marineDataArray, hoursTotal);
-                    
-                    document.getElementById('last-sync-time').innerText = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                    document.getElementById('sync-icon').classList.add('text-green-500');
-                    this.showStatus("Forecast successfully generated for route.");
-
-                } catch (error) {
-                    console.error(error);
-                    this.showStatus("Error fetching data. Check coordinates or internet.", true);
-                } finally {
-                    btn.innerHTML = "<span>📡</span> Generate Route Forecast";
-                    btn.disabled = false;
-                }
-            },
-
-            processRouteData: function(weatherArray, marineArray, totalHours) {
-                // We want to create arrays for charts (max 168 hours = 7 days)
-                const maxHours = Math.min(Math.ceil(totalHours), 168); 
-                
-                let stitched = {
-                    labels: [],
-                    windSpeed: [],
-                    windGusts: [],
-                    pressure: [],
-                    waveHeight: []
-                };
-
-                // Time zero is now.
-                const startTime = new Date();
-
-                for(let h=0; h <= maxHours; h+=3) { // 3 hour intervals for clean charts
-                    const futureTime = new Date(startTime.getTime() + h * 60 * 60 * 1000);
-                    
-                    // Format Label
-                    const label = h === 0 ? "Now" : `+${h}h (${futureTime.getHours()}h)`;
-                    stitched.labels.push(label);
-
-                    // Determine which waypoint array we should pull from based on time elapsed.
-                    let wpIndex = 0;
-                    for(let i=0; i<this.routeWaypoints.length; i++) {
-                        if(h >= this.routeWaypoints[i].timeOffsetHours) wpIndex = i;
-                    }
-                    if(wpIndex >= weatherArray.length) wpIndex = weatherArray.length - 1;
-
-                    // Get specific hour data
-                    // Open-Meteo hourly array corresponds to the 168 hours of the 7 day forecast.
-                    // Assuming array starts at today 00:00, we need to find the exact index.
-                    // Instead of date matching logic which is brittle, OpenMeteo returns 168 hours starting from current hour usually if configured, 
-                    // actually it starts at 00:00 of current day. Let's find the current hour index.
-                    const wData = weatherArray[wpIndex].hourly;
-                    
-                    // Find the index in the hourly array that matches 'futureTime'
-                    // Open-Meteo time format: "2023-10-10T15:00"
-                    let dataIndex = -1;
-                    const targetISOPrefix = futureTime.toISOString().substring(0, 14); // "YYYY-MM-DDTHH:"
-                    
-                    for(let i=0; i<wData.time.length; i++) {
-                        // Handle potential timezone variations by matching the date/hour string prefix roughly, 
-                        // or just use h + currentHourOffset
-                        const timeStr = wData.time[i];
-                        if(timeStr.includes(targetISOPrefix)) {
-                            dataIndex = i; break;
-                        }
-                    }
-                    
-                    // Fallback to simple offset if exact time matching fails
-                    if(dataIndex === -1) {
-                        const currentHour = startTime.getHours();
-                        dataIndex = currentHour + h;
-                    }
-
-                    if(dataIndex < wData.wind_speed_10m.length) {
-                        stitched.windSpeed.push(wData.wind_speed_10m[dataIndex]);
-                        stitched.windGusts.push(wData.wind_gusts_10m[dataIndex]);
-                        stitched.pressure.push(wData.surface_pressure[dataIndex]);
-                    }
-
-                    // Marine Data
-                    if(marineArray.length > wpIndex) {
-                        const mData = marineArray[wpIndex].hourly;
-                        if(mData && mData.wave_height && dataIndex < mData.wave_height.length) {
-                            stitched.waveHeight.push(mData.wave_height[dataIndex] || 0);
-                        } else {
-                            stitched.waveHeight.push(0);
-                        }
-                    } else {
-                        stitched.waveHeight.push(0);
-                    }
-                }
-
-                this.waypointData = this.routeWaypoints.map((wp, i) => {
-                    const wData = weatherArray[i].hourly;
-                    const mData = marineArray.length > i ? marineArray[i].hourly : null;
-                    
-                    const arrivalTime = new Date(startTime.getTime() + wp.timeOffsetHours * 60 * 60 * 1000);
-                    
-                    const getIdx = (hoursAfterArrival) => {
-                        const targetTime = new Date(arrivalTime.getTime() + hoursAfterArrival * 60 * 60 * 1000);
-                        let dataIndex = -1;
-                        const targetISOPrefix = targetTime.toISOString().substring(0, 14); 
-                        for(let j=0; j<wData.time.length; j++) {
-                            if(wData.time[j].includes(targetISOPrefix)) { dataIndex = j; break; }
-                        }
-                        if(dataIndex === -1) {
-                             const currentHour = startTime.getHours();
-                             dataIndex = currentHour + Math.round(wp.timeOffsetHours) + hoursAfterArrival;
-                        }
-                        return dataIndex;
-                    };
-
-                    const extractData = (hrOffset) => {
-                        const idx = getIdx(hrOffset);
-                        let wind = "--", gust = "--", wave = "--", press = "--";
-                        if(idx >= 0 && idx < wData.wind_speed_10m.length) {
-                            wind = Math.round(wData.wind_speed_10m[idx]);
-                            gust = Math.round(wData.wind_gusts_10m[idx]);
-                            press = Math.round(wData.surface_pressure[idx]);
-                            if(mData && mData.wave_height && idx < mData.wave_height.length && mData.wave_height[idx] !== null) {
-                                wave = mData.wave_height[idx].toFixed(1);
-                            }
-                        }
-                        const timeObj = new Date(arrivalTime.getTime() + hrOffset * 3600000);
-                        return { wind, gust, wave, press, timeObj };
-                    };
-
-                    return {
-                        label: wp.label,
-                        eta: arrivalTime,
-                        data0: extractData(0),
-                        data12: extractData(12),
-                        data24: extractData(24)
-                    };
-                });
-
-                this.renderWaypointTabs();
-                this.renderWaypointTable();
-                this.selectWaypointTab(0);
-
-                // --- Calculate KPIs (Averages for the whole route) ---
-                const avg = arr => arr.length ? (arr.reduce((a,b)=>a+(b||0),0) / arr.length) : 0;
-                
-                const kpiW = Math.round(avg(stitched.windSpeed));
-                const kpiV = avg(stitched.waveHeight).toFixed(1);
-                const kpiP = Math.round(avg(stitched.pressure));
-
-                document.getElementById('kpi-wind').innerText = kpiW;
-                document.getElementById('kpi-wave').innerText = kpiV;
-                document.getElementById('kpi-pressure').innerText = kpiP;
-
-                // Simple AI logic for Status
-                const statusCard = document.getElementById('kpi-status-card');
-                const statusText = document.getElementById('kpi-status-text');
-                const statusIcon = document.getElementById('kpi-status-icon');
-                
-                if (kpiW > 30 || kpiV > 4.0 || kpiP < 995) {
-                    statusCard.className = "card flex flex-col justify-between border-t-4 border-red-600 bg-red-50 dark:bg-red-900/20";
-                    statusText.innerText = "DANGER"; statusText.className = "text-2xl font-bold text-red-700 dark:text-red-400";
-                    statusIcon.innerText = "🛑";
-                    document.getElementById('kpi-status-desc').innerText = "Severe conditions expected along route. Delay recommended.";
-                } else if (kpiW > 20 || kpiV > 2.5) {
-                    statusCard.className = "card flex flex-col justify-between border-t-4 border-[#D97736] bg-[#FEF5F0] dark:bg-orange-900/20";
-                    statusText.innerText = "CAUTION"; statusText.className = "text-2xl font-bold text-[#D97736]";
-                    statusIcon.innerText = "⚠️";
-                    document.getElementById('kpi-status-desc').innerText = "Heavy weather. Ensure vessel and crew are prepared.";
-                } else {
-                    statusCard.className = "card flex flex-col justify-between border-t-4 border-[#4A7C59] bg-[#F2F7F4] dark:bg-green-900/20";
-                    statusText.innerText = "GO"; statusText.className = "text-2xl font-bold text-[#2C523B] dark:text-green-400";
-                    statusIcon.innerText = "✅";
-                    document.getElementById('kpi-status-desc').innerText = "Favorable routing conditions forecasted.";
-                }
-
-                this.updateCharts(stitched);
             },
 
             initCharts: function() {
-                // Initialize empty charts, they will be populated by API data
+                this.updateChartTheme();
                 const windCtx = document.getElementById('windChart').getContext('2d');
-                windChartInst = new Chart(windCtx, {
-                    type: 'line',
-                    data: { labels: [], datasets: [
-                        { label: 'Wind Gusts (kts)', data: [], borderColor: 'rgba(217, 119, 54, 0.8)', backgroundColor: 'transparent', borderDash: [5, 5], tension: 0.4, borderWidth: 2, pointRadius: 0 },
-                        { label: 'Wind Speed (kts)', data: [], borderColor: '#4B7293', backgroundColor: 'rgba(75, 114, 147, 0.1)', fill: true, tension: 0.4, borderWidth: 3, pointBackgroundColor: '#4B7293' }
-                    ]},
-                    options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, scales: { y: { beginAtZero: true, title: { display: true, text: 'Knots' } }, x: { grid: { display: false } } } }
+                this.windChartInst = new Chart(windCtx, {
+                    type: 'line', data: { labels: [], datasets: [] },
+                    options: { interaction: { mode: 'index', intersect: false }, plugins: { tooltip: this.getTooltipConfig('kts') }, scales: { y: { title: { display: true, text: 'Knots' } } } }
                 });
 
                 const waveCtx = document.getElementById('waveChart').getContext('2d');
-                waveChartInst = new Chart(waveCtx, {
-                    type: 'bar',
-                    data: { labels: [], datasets: [{ label: 'Wave Height (m)', data: [], backgroundColor: '#4A7C59', borderRadius: 4, barPercentage: 0.8 }] },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, title: { display: true, text: 'Meters' } }, x: { grid: { display: false } } } }
+                this.waveChartInst = new Chart(waveCtx, {
+                    type: 'bar', data: { labels: [], datasets: [] },
+                    options: { plugins: { legend: { display: false }, tooltip: this.getTooltipConfig('m') }, scales: { y: { title: { display: true, text: 'Meters' } } } }
                 });
 
                 const pressureCtx = document.getElementById('pressureChart').getContext('2d');
-                pressureChartInst = new Chart(pressureCtx, {
-                    type: 'line',
-                    data: { labels: [], datasets: [{ label: 'Pressure (hPa)', data: [], borderColor: '#D97736', backgroundColor: 'transparent', tension: 0.3, borderWidth: 3, pointRadius: 0 }] },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { min: 980, max: 1030, title: { display: true, text: 'hPa' } }, x: { grid: { display: false } } } }
-                });
-            },
-
-            updateCharts: function(data) {
-                windChartInst.data.labels = data.labels;
-                windChartInst.data.datasets[0].data = data.windGusts;
-                windChartInst.data.datasets[1].data = data.windSpeed;
-                windChartInst.update();
-
-                waveChartInst.data.labels = data.labels;
-                waveChartInst.data.datasets[0].data = data.waveHeight;
-                waveChartInst.data.datasets[0].backgroundColor = data.waveHeight.map(h => h > 3.0 ? '#D97736' : '#4A7C59');
-                waveChartInst.update();
-
-                pressureChartInst.data.labels = data.labels;
-                pressureChartInst.data.datasets[0].data = data.pressure;
-                // Auto adjust pressure scale to fit data
-                const minP = Math.min(...data.pressure.filter(p=>p>0)) - 5;
-                const maxP = Math.max(...data.pressure.filter(p=>p>0)) + 5;
-                if(isFinite(minP) && isFinite(maxP)) {
-                    pressureChartInst.options.scales.y.min = Math.floor(minP);
-                    pressureChartInst.options.scales.y.max = Math.ceil(maxP);
-                }
-                pressureChartInst.update();
-            },
-
-            renderWaypointTabs: function() {
-                const container = document.getElementById('waypoint-tabs');
-                container.innerHTML = '';
-                this.waypointData.forEach((wp, index) => {
-                    const btn = document.createElement('button');
-                    btn.className = `px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-200 border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700`;
-                    btn.innerText = wp.label;
-                    btn.id = `wp-tab-${index}`;
-                    btn.onclick = () => this.selectWaypointTab(index);
-                    container.appendChild(btn);
-                });
-            },
-
-            selectWaypointTab: function(index) {
-                // Update Button Styles
-                this.waypointData.forEach((_, i) => {
-                    const btn = document.getElementById(`wp-tab-${i}`);
-                    if(btn) {
-                        if(i === index) {
-                            btn.className = `px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-200 border-2 border-[#D97736] bg-[#FEF5F0] dark:bg-[#D97736]/20 text-[#D97736] dark:text-orange-300 shadow-sm`;
-                        } else {
-                            btn.className = `px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-200 border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700`;
-                        }
-                    }
+                this.pressureChartInst = new Chart(pressureCtx, {
+                    type: 'line', data: { labels: [], datasets: [] },
+                    options: { plugins: { legend: { display: false }, tooltip: this.getTooltipConfig('hPa') }, scales: { y: { title: { display: true, text: 'hPa' } } } }
                 });
 
-                // Render Content
-                const data = this.waypointData[index];
-                if(!data) return;
-
-                const renderPanel = (title, d) => `
-                    <div class="bg-white dark:bg-slate-900 rounded-lg p-4 border border-gray-100 dark:border-slate-700 shadow-sm flex-1">
-                        <div class="flex justify-between items-center mb-3 pb-2 border-b border-gray-100 dark:border-slate-700">
-                            <span class="font-bold text-[#4B7293] dark:text-blue-400">${title}</span>
-                            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">${d.timeObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                        </div>
-                        <div class="space-y-3 text-sm">
-                            <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400 flex items-center gap-1"><span>🌬️</span> Wind:</span> <span class="font-semibold text-gray-900 dark:text-gray-100">${d.wind} kts <span class="text-gray-400 text-xs font-normal">(G ${d.gust})</span></span></div>
-                            <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400 flex items-center gap-1"><span>〰️</span> Waves:</span> <span class="font-semibold text-gray-900 dark:text-gray-100">${d.wave} m</span></div>
-                            <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400 flex items-center gap-1"><span>⏬</span> Press:</span> <span class="font-semibold text-gray-900 dark:text-gray-100">${d.press} hPa</span></div>
-                        </div>
-                    </div>
-                `;
-
-                const html = `
-                    <div class="p-4 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-t-lg">
-                        <h4 class="text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">📍 ${data.label} <span class="text-sm font-normal text-gray-500 ml-2">ETA: ${data.eta.toLocaleDateString()} ${data.eta.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span></h4>
-                    </div>
-                    <div class="p-4 flex flex-col md:flex-row gap-4">
-                        ${renderPanel('At Arrival', data.data0)}
-                        ${renderPanel('Arrival + 12h', data.data12)}
-                        ${renderPanel('Arrival + 24h', data.data24)}
-                    </div>
-                `;
-
-                document.getElementById('waypoint-content').innerHTML = html;
+                this.updateCharts();
             },
 
-            renderWaypointTable: function() {
-                const tbody = document.getElementById('route-table-body');
-                tbody.innerHTML = '';
+            updateCharts: function() {
+                this.windChartInst.data.labels = this.chartData.labels;
+                this.windChartInst.data.datasets = [
+                    { label: 'Gusts', data: this.chartData.gusts, borderColor: '#D97736', borderDash: [5, 5], tension: 0.4, borderWidth: 2, pointRadius: 0 },
+                    { label: 'Wind', data: this.chartData.wind, borderColor: '#4B7293', backgroundColor: 'rgba(75, 114, 147, 0.1)', fill: true, tension: 0.4, borderWidth: 3 }
+                ];
+                this.windChartInst.update();
+
+                this.waveChartInst.data.labels = this.chartData.labels;
+                this.waveChartInst.data.datasets = [{
+                    label: 'Wave Height', data: this.chartData.wave, borderRadius: 4,
+                    backgroundColor: this.chartData.wave.map(h => h > 3 ? '#D97736' : '#4A7C59')
+                }];
+                this.waveChartInst.update();
+
+                this.pressureChartInst.data.labels = this.chartData.labels;
+                const isDark = document.documentElement.classList.contains('dark');
+                this.pressureChartInst.data.datasets = [{
+                    label: 'Pressure', data: this.chartData.pressure, borderColor: isDark ? '#E2E8F0' : '#333333', tension: 0.3, borderWidth: 2, pointBackgroundColor: isDark ? '#1E1E1E' : '#FFFFFF'
+                }];
                 
-                this.waypointData.forEach(wp => {
-                    const d = wp.data0; // Show arrival conditions in table
-                    const row = `
-                        <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-                            <td class="px-4 py-3 whitespace-nowrap font-medium text-gray-900 dark:text-gray-100">${wp.label}</td>
-                            <td class="px-4 py-3 whitespace-nowrap text-gray-500 dark:text-gray-400">${wp.eta.toLocaleDateString()} ${wp.eta.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
-                            <td class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-gray-200">${d.wind} <span class="text-xs text-gray-400">(G ${d.gust})</span></td>
-                            <td class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-gray-200">${d.wave}</td>
-                            <td class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-gray-200">${d.press}</td>
-                        </tr>
-                    `;
-                    tbody.innerHTML += row;
-                });
-            },
-
-            toggleRouteTable: function() {
-                const table = document.getElementById('route-table-container');
-                table.classList.toggle('hidden');
+                const validP = this.chartData.pressure.filter(p => p !== null);
+                if (validP.length) {
+                    this.pressureChartInst.options.scales.y.min = Math.floor(Math.min(...validP)) - 2;
+                    this.pressureChartInst.options.scales.y.max = Math.ceil(Math.max(...validP)) + 2;
+                }
+                this.pressureChartInst.update();
             }
         };
 
-        window.addEventListener('DOMContentLoaded', () => {
-            app.init();
-        });
-
+        window.addEventListener('DOMContentLoaded', () => { app.init(); });
     </script>
 </body>
 </html>
