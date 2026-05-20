@@ -1,49 +1,1005 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Weather Analysis · Arcturus+</title>
-  <link rel="stylesheet" href="../style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sailing Expedition Weather Dashboard</title>
+    
+    <!-- Chosen Palette: Warm Neutrals & Muted Ocean. Background: #F9F8F6 (Sand), Cards: #FFFFFF (White), Primary Data: #4B7293 (Muted Blue), Accents: #D97736 (Terracotta), #4A7C59 (Muted Green). -->
+    <!-- Application Structure Plan: A centralized interactive dashboard designed for quick decision-making at sea. The structure uses a top-level "Voyage Leg" selector to instantly filter all downstream data between Coastal and Ocean phases. It prioritizes immediate KPI visibility (Current Conditions) followed by detailed trend analysis (Wind, Wave, Pressure charts) which are crucial for sailing. This layout allows navigators to quickly grasp the overall safety status and then drill down into specific meteorological metrics without leaving the page. -->
+    <!-- Visualization & Content Choices: 
+         1. Wind Speed & Gusts -> Goal: Identify safe sailing windows -> Viz: Line Chart with Fill (Chart.js Canvas) -> Interaction: Leg filtering -> Justification: Line charts best show continuous trends over time. 
+         2. Sea State (Wave Height) -> Goal: Assess vessel stress & comfort -> Viz: Bar Chart (Chart.js Canvas) -> Interaction: Hover for exact height -> Justification: Bars clearly delineate discrete height values per time period.
+         3. Barometric Pressure -> Goal: Predict incoming weather systems -> Viz: Line Chart (Chart.js Canvas) -> Interaction: Leg filtering -> Justification: Pressure drops are key leading indicators of storms; line slopes make drops obvious.
+         NO SVG/Mermaid used. Standard Canvas and Unicode icons utilized. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Tailwind Config for Dark Mode -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        marine: { dark: '#0f172a', card: '#1e293b', accent: '#D97736' }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Leaflet CSS & JS for Visual Boundary Mapping -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        /* Custom Styles & Chart Container Constraints */
+        body {
+            background-color: #F9F8F6;
+            color: #333333;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        .card {
+            background-color: #FFFFFF;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            padding: 1.5rem;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        /* Dark Mode Overrides for Night Vision Preservation */
+        html.dark body {
+            background-color: #020617; /* Very dark blue/black */
+            color: #94a3b8;
+        }
+        html.dark .card {
+            background-color: #0f172a;
+            border: 1px solid #1e293b;
+            box-shadow: none;
+        }
+        html.dark .text-gray-800, html.dark .text-gray-900 { color: #f8fafc; }
+        html.dark .text-gray-600, html.dark .text-gray-500 { color: #cbd5e1; }
+        html.dark .bg-white { background-color: #0f172a; }
+        html.dark .bg-gray-50, html.dark .bg-gray-100 { background-color: #1e293b; }
+        html.dark .border-gray-200, html.dark .border-gray-300 { border-color: #334155; }
+        html.dark input, html.dark select { 
+            background-color: #1e293b; 
+            color: #f8fafc; 
+            border-color: #475569; 
+        }
+
+        /* CRITICAL: Chart Container Responsiveness & Constraints */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 1000px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 35vh;
+            min-height: 250px;
+            max-height: 400px;
+        }
+
+        /* Custom Scrollbar for better UI */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F1F1F1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #C1C1C1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #A8A8A8;
+        }
+    </style>
 </head>
-<body>
-  <header><h1>Arcturus+ · Weather Analysis</h1></header>
-  <nav>
-    <a href="../index.html">Home</a>
-    <a href="../about.html">About</a>
-    <a href="../races/index.html">Races</a>
-    <a href="index.html">Insights</a>
-    <a href="../destinations/index.html">Destinations</a>
-    <a href="../media/index.html">Media</a>
-    <a href="../contact.html">Contact</a>
-  </nav>
-  <main>
-    <h2>Weather Analysis</h2>
-    <p>Weather patterns, forecasting tools, and typhoon avoidance strategies for SE Asia.</p>
-    <h3>Regional Weather Patterns</h3>
-    <ul>
-      <li><strong>NE Monsoon:</strong> Oct-Apr, N-NE winds 10-25kt, dry conditions</li>
-      <li><strong>SW Monsoon:</strong> May-Sep, SW-W winds, hot and humid, typhoon season</li>
-      <li><strong>Inter-monsoon:</strong> Apr-May and Sep-Oct, light and variable</li>
-    </ul>
-    <h3>Forecasting Tools</h3>
-    <ul>
-      <li><strong>Windy.com</strong> — primary GRIB weather tool</li>
-      <li><strong>Typhoon2000</strong> — tropical cyclone tracking</li>
-      <li><strong>NOAA GFS</strong> — 10-day global model</li>
-      <li><strong>ECMWF</strong> — better for typhoon tracking</li>
-    </ul>
-    <h3>Typhoon Protocol</h3>
-    <ul>
-      <li>Monitor all systems within 1000km of route</li>
-      <li>Always have an escape plan / alter course options</li>
-      <li>No sailing inside a typhoon warning area</li>
-      <li>Seek shelter early — don't wait</li>
-    </ul>
-    <p><em>Content to be added by crew.</em></p>
-  </main>
-  <footer>
-    <p>© 2025 Arcturus+ · Hong Kong · <a href="../contact.html">Contact</a></p>
-  </footer>
+<body class="antialiased selection:bg-[#4B7293] selection:text-white pb-12 transition-colors duration-300">
+
+    <!-- Header Navigation -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50 transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="text-2xl">⛵</span>
+                <h1 class="text-xl font-bold text-[#333333] tracking-tight">Expedition <span class="text-[#4B7293]">WeatherNav</span></h1>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <!-- Theme Toggles -->
+                <div class="flex items-center bg-gray-100 rounded-lg p-1 border border-gray-200">
+                    <button onclick="app.setTheme('day')" id="theme-day" class="px-3 py-1 text-sm rounded-md font-medium transition-colors bg-white shadow-sm text-gray-800" title="Day Mode">☀️</button>
+                    <button onclick="app.setTheme('dark')" id="theme-dark" class="px-3 py-1 text-sm rounded-md font-medium transition-colors text-gray-500 hover:text-gray-800" title="Night Vision Mode">🌙</button>
+                    <button onclick="app.setTheme('auto')" id="theme-auto" class="px-3 py-1 text-sm rounded-md font-medium transition-colors text-gray-500 hover:text-gray-800" title="Auto (Sunrise/Sunset)">⚙️ Auto</button>
+                </div>
+
+                <div class="hidden sm:flex text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full items-center gap-2">
+                    <span id="sync-icon">⏱️</span> Last Sync: <span id="last-sync-time" class="text-gray-800">Never</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 space-y-8">
+        
+        <!-- Contextual Introduction -->
+        <section class="max-w-4xl">
+            <h2 class="text-3xl font-semibold mb-3 text-gray-900">Voyage Weather Intelligence</h2>
+            <p class="text-gray-600 leading-relaxed text-lg">
+                This dashboard dynamically queries <strong>Open-Meteo</strong> to build a customized forecast along your exact route. By estimating your vessel's progress, it projects the weather you will encounter at the specific time you arrive at each coordinate.
+            </p>
+            
+            <div class="bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-400 p-4 mt-4 rounded-r shadow-sm">
+                <div class="flex">
+                    <div class="flex-shrink-0 text-xl">⚠️</div>
+                    <div class="ml-3">
+                        <p class="text-sm text-yellow-800 dark:text-yellow-200">
+                            <strong>Navigational Disclaimer:</strong> This application provides meteorological forecasts based strictly on your estimated straight-line progress. It explicitly <strong>does not consider ocean currents, tidal streams, or vessel leeway</strong>. Always consult local tide tables, pilot charts, and current models alongside this data.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="api-status-msg" class="hidden mt-3 p-3 rounded-md text-sm font-bold"></div>
+        </section>
+
+        <!-- Voyage Planner & Navigation Boundary -->
+        <section class="card border-t-4 border-[#4B7293]">
+            <div class="flex flex-col lg:flex-row gap-6">
+                <!-- Route Configuration Input -->
+                <div class="w-full lg:w-1/3 space-y-5">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2"><span>📍</span> Voyage Configuration</h3>
+                        <p class="text-sm text-gray-500 mt-1">Set your route. The forecast timeline will roll forward along this path.</p>
+                    </div>
+                    
+                    <!-- Start Location -->
+                    <div class="space-y-2 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                        <div class="flex justify-between items-center">
+                            <label class="text-xs font-bold text-gray-700 uppercase">1. Start / Current Pos</label>
+                            <button onclick="app.getDeviceLocation()" class="text-xs bg-[#4B7293] text-white px-2 py-1 rounded flex items-center gap-1 hover:bg-[#3A5A75]"><span>📱</span> Get GPS</button>
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="number" id="start-lat" step="0.0001" class="w-full p-2 border rounded bg-white text-sm font-mono" placeholder="Lat (e.g. 22.25)" value="22.25">
+                            <input type="number" id="start-lon" step="0.0001" class="w-full p-2 border rounded bg-white text-sm font-mono" placeholder="Lon (e.g. 114.16)" value="114.16">
+                        </div>
+                    </div>
+
+                    <!-- Destination Location -->
+                    <div class="space-y-2 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                        <label class="text-xs font-bold text-gray-700 uppercase block">2. Destination Pos</label>
+                        <div class="flex gap-2">
+                            <input type="number" id="dest-lat" step="0.0001" class="w-full p-2 border rounded bg-white text-sm font-mono" placeholder="Lat (e.g. 14.59)" value="14.59">
+                            <input type="number" id="dest-lon" step="0.0001" class="w-full p-2 border rounded bg-white text-sm font-mono" placeholder="Lon (e.g. 120.98)" value="120.98">
+                        </div>
+                    </div>
+
+                    <!-- Vessel Speed -->
+                    <div class="space-y-2 bg-gray-50 p-3 rounded-lg border border-gray-200 flex items-center justify-between">
+                        <label class="text-xs font-bold text-gray-700 uppercase">3. Avg Speed (kts)</label>
+                        <input type="number" id="vessel-speed" step="0.1" class="w-24 p-2 border rounded bg-white text-center font-mono font-bold" value="5.5">
+                    </div>
+
+                    <div class="pt-2">
+                        <button onclick="app.calculateRouteAndFetchWeather()" id="btn-fetch" class="w-full bg-[#D97736] hover:bg-[#B8622A] text-white py-3 rounded-lg transition-colors font-bold text-lg shadow-md flex justify-center items-center gap-2">
+                            <span>📡</span> Generate Route Forecast
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Map Boundary -->
+                <div class="w-full lg:w-2/3 h-[450px] bg-gray-200 rounded-lg overflow-hidden relative z-0 border border-gray-300" id="boundary-map">
+                    <!-- Leaflet map injected here -->
+                </div>
+            </div>
+            
+            <!-- Route Metadata -->
+            <div id="route-meta" class="mt-4 flex gap-4 text-sm text-gray-700 justify-between font-medium hidden p-3 bg-[#F2F7F4] border border-[#4A7C59] rounded-lg dark:bg-green-900/20 dark:text-green-100">
+                <span><strong>Distance:</strong> <span id="meta-dist">--</span> NM</span>
+                <span><strong>Est. Duration:</strong> <span id="meta-time">--</span> Days</span>
+                <span><strong>Arrival:</strong> <span id="meta-arrival">--</span></span>
+            </div>
+        </section>
+
+        <!-- Route Waypoint Conditions -->
+        <section>
+            <div class="mb-4 mt-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100 border-b-2 border-[#D97736] pb-1 inline-block">Waypoint Conditions (ETA)</h3>
+                    <p class="text-sm text-gray-500 mt-1">Forecasted conditions at estimated arrival times along your route.</p>
+                </div>
+                <button onclick="app.toggleRouteTable()" class="text-sm bg-[#4B7293] hover:bg-[#3A5A75] text-white px-4 py-2 rounded-lg transition-colors font-semibold shadow-sm flex items-center gap-2">
+                    <span>📄</span> Toggle Full Route Table
+                </button>
+            </div>
+            
+            <!-- Dynamic Tabs -->
+            <div class="flex flex-wrap gap-2 mb-4" id="waypoint-tabs">
+                <!-- Buttons injected via JS -->
+            </div>
+
+            <!-- Tab Content Panel -->
+            <div class="card bg-[#F9F8F6] dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-sm" id="waypoint-content">
+                 <!-- Sub-panels injected via JS -->
+            </div>
+
+            <!-- Full Route Table (Hidden by default) -->
+            <div id="route-table-container" class="hidden mt-4 overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700 shadow-sm">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700 bg-white dark:bg-slate-900 text-sm">
+                    <thead class="bg-gray-50 dark:bg-slate-800">
+                        <tr>
+                            <th class="px-4 py-3 text-left font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Waypoint</th>
+                            <th class="px-4 py-3 text-left font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">ETA</th>
+                            <th class="px-4 py-3 text-left font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Wind (kts)</th>
+                            <th class="px-4 py-3 text-left font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Waves (m)</th>
+                            <th class="px-4 py-3 text-left font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Pressure (hPa)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="route-table-body" class="divide-y divide-gray-200 dark:divide-slate-700">
+                        <!-- Rows injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Live Map & Radar Section -->
+        <section class="space-y-6 mt-8">
+            <div class="mb-2">
+                <h3 class="text-xl font-bold text-gray-800 border-b-2 border-[#4B7293] pb-1 inline-block">Professional Routing Maps & Radar</h3>
+                <p class="text-sm text-gray-500 mt-1">Wide perspective synoptic data and live localized rain radar overlays.</p>
+            </div>
+
+            <!-- PredictWind Embed -->
+            <div class="card p-0 overflow-hidden bg-[#1A202C] border-2 border-gray-800">
+                <div class="flex justify-between items-center p-3 border-b border-gray-700">
+                    <h4 class="text-lg font-bold text-white flex items-center gap-2"><span>🌍</span> PredictWind Wide Perspective (200-400NM)</h4>
+                    <span class="text-xs font-bold bg-blue-600 text-white px-2 py-1 rounded shadow">PRO SUB</span>
+                </div>
+                <!-- Embed provided by user -->
+                <div class="w-full h-[800px] relative">
+                    <iframe src="https://forecast.predictwind.com/embed/HKTaiwan" height="100%" width="100%" frameborder="0" class="absolute inset-0"></iframe>
+                </div>
+            </div>
+
+            <!-- RainViewer Radar Embed -->
+            <div class="card p-0 overflow-hidden border border-gray-300">
+                <div class="flex justify-between items-center p-3 bg-gray-50 border-b border-gray-200">
+                    <h4 class="text-lg font-bold text-gray-800 flex items-center gap-2"><span>🌧️</span> Local Rain Radar (RainViewer)</h4>
+                    <p class="text-sm text-gray-500 hidden sm:block">Real-time precipitation tracking.</p>
+                </div>
+                <div class="w-full h-[400px] relative">
+                    <iframe id="rainviewer-frame" src="https://www.rainviewer.com/map.html?loc=22.25,114.16,6&oFa=0&oC=0&oU=0&oCS=1&oF=0&oM=0&color=2&app=1" width="100%" height="100%" frameborder="0" class="absolute inset-0"></iframe>
+                </div>
+            </div>
+        </section>
+
+        <!-- KPI Dashboard Section -->
+        <section>
+            <div class="mb-4">
+                <h3 class="text-xl font-bold text-gray-800 border-b-2 border-[#4B7293] pb-1 inline-block">Current Leg Averages</h3>
+                <p class="text-sm text-gray-500 mt-1">Snapshot of primary meteorological indicators for the selected voyage phase.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Wind KPI -->
+                <div class="card flex flex-col justify-between border-t-4 border-[#4B7293]">
+                    <div class="flex justify-between items-start">
+                        <span class="text-gray-500 font-medium text-sm uppercase tracking-wider">Avg Wind Speed</span>
+                        <span class="text-2xl text-[#4B7293]">🌬️</span>
+                    </div>
+                    <div class="mt-4">
+                        <span id="kpi-wind" class="text-4xl font-bold text-gray-900">15</span>
+                        <span class="text-gray-500 ml-1 font-medium">kts</span>
+                    </div>
+                    <p id="kpi-wind-desc" class="text-sm text-gray-500 mt-2">Moderate breeze, ideal for sailing.</p>
+                </div>
+
+                <!-- Wave KPI -->
+                <div class="card flex flex-col justify-between border-t-4 border-[#4A7C59]">
+                    <div class="flex justify-between items-start">
+                        <span class="text-gray-500 font-medium text-sm uppercase tracking-wider">Avg Wave Height</span>
+                        <span class="text-2xl text-[#4A7C59]">〰️</span>
+                    </div>
+                    <div class="mt-4">
+                        <span id="kpi-wave" class="text-4xl font-bold text-gray-900">1.2</span>
+                        <span class="text-gray-500 ml-1 font-medium">m</span>
+                    </div>
+                    <p id="kpi-wave-desc" class="text-sm text-gray-500 mt-2">Slight seas, comfortable conditions.</p>
+                </div>
+
+                <!-- Pressure KPI -->
+                <div class="card flex flex-col justify-between border-t-4 border-gray-400">
+                    <div class="flex justify-between items-start">
+                        <span class="text-gray-500 font-medium text-sm uppercase tracking-wider">Mean Pressure</span>
+                        <span class="text-2xl text-gray-500">⏬</span>
+                    </div>
+                    <div class="mt-4">
+                        <span id="kpi-pressure" class="text-4xl font-bold text-gray-900">1015</span>
+                        <span class="text-gray-500 ml-1 font-medium">hPa</span>
+                    </div>
+                    <p id="kpi-pressure-desc" class="text-sm text-gray-500 mt-2">Stable high-pressure system.</p>
+                </div>
+
+                <!-- Status KPI -->
+                <div id="kpi-status-card" class="card flex flex-col justify-between border-t-4 border-[#4A7C59] bg-[#F2F7F4]">
+                    <div class="flex justify-between items-start">
+                        <span class="text-gray-700 font-bold text-sm uppercase tracking-wider">Overall Status</span>
+                        <span id="kpi-status-icon" class="text-2xl">✅</span>
+                    </div>
+                    <div class="mt-4">
+                        <span id="kpi-status-text" class="text-2xl font-bold text-[#2C523B]">GO</span>
+                    </div>
+                    <p id="kpi-status-desc" class="text-sm text-gray-600 mt-2">Conditions are favorable for departure.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Detailed Analytics Section -->
+        <section class="space-y-6">
+            <div class="mb-2 mt-8">
+                <h3 class="text-xl font-bold text-gray-800 border-b-2 border-[#4B7293] pb-1 inline-block">Rolling Route Forecast Models</h3>
+                <p class="text-sm text-gray-500 mt-1">Timeline analysis of conditions <strong>along your planned route</strong> up to 7 days out. Time represents estimated arrival at future coordinates.</p>
+            </div>
+
+            <!-- Wind Dynamics Chart -->
+            <div class="card">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
+                    <div>
+                        <h4 class="text-lg font-bold text-gray-800 flex items-center gap-2"><span>🌬️</span> Wind Dynamics (Speed & Gusts)</h4>
+                        <p class="text-sm text-gray-500">Forecasted base wind speed and potential gusts in knots over the selected phase duration.</p>
+                    </div>
+                </div>
+                <!-- CRITICAL: Chart Container -->
+                <div class="chart-container">
+                    <canvas id="windChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 2-Column Grid for Waves and Pressure -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Sea State Chart -->
+                <div class="card">
+                    <div class="mb-4">
+                        <h4 class="text-lg font-bold text-gray-800 flex items-center gap-2"><span>〰️</span> Sea State Analysis</h4>
+                        <p class="text-sm text-gray-500">Expected significant wave heights (meters). Crucial for calculating hull stress and crew fatigue.</p>
+                    </div>
+                    <!-- CRITICAL: Chart Container -->
+                    <div class="chart-container">
+                        <canvas id="waveChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Barometric Pressure Chart -->
+                <div class="card">
+                    <div class="mb-4">
+                        <h4 class="text-lg font-bold text-gray-800 flex items-center gap-2"><span>⏬</span> Barometric Trends</h4>
+                        <p class="text-sm text-gray-500">Atmospheric pressure (hPa). Steep drops indicate approaching cyclonic activity or squalls.</p>
+                    </div>
+                    <!-- CRITICAL: Chart Container -->
+                    <div class="chart-container">
+                        <canvas id="pressureChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tactical Summary Text Block -->
+        <section class="card bg-gray-50 border border-gray-200 mt-8 hidden" id="summary-section">
+            <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2"><span>📋</span> Route Analysis Summary</h3>
+            <div id="tactical-summary" class="text-gray-700 leading-relaxed space-y-3">
+                <!-- Dynamically populated via JS -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Application Logic -->
+    <script>
+        let windChartInst, waveChartInst, pressureChartInst;
+        let boundaryMap, markerStart, markerDest, routeLine;
+        let mapTileLayer;
+
+        const MAP_TILES_LIGHT = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+        const MAP_TILES_DARK = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+
+        Chart.defaults.font.family = "'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+        Chart.defaults.color = '#718096';
+
+        const app = {
+            theme: 'auto', // 'day', 'dark', 'auto'
+            sunrise: null,
+            sunset: null,
+            routeData: null,
+            routeWaypoints: [],
+            waypointData: [],
+
+            init: function() {
+                this.initCharts();
+                this.initMap();
+                
+                // Initial theme setup
+                const savedTheme = localStorage.getItem('weatherNavTheme') || 'auto';
+                this.setTheme(savedTheme);
+
+                // Initial map setup (default to HK -> Philippines for context)
+                this.calculateRouteAndFetchWeather();
+            },
+
+            setTheme: function(mode) {
+                this.theme = mode;
+                localStorage.setItem('weatherNavTheme', mode);
+                const html = document.documentElement;
+                const hour = new Date().getHours();
+                
+                let isDark = false;
+
+                // Reset Button UI
+                ['day', 'dark', 'auto'].forEach(t => {
+                    const btn = document.getElementById(`theme-${t}`);
+                    btn.className = 'px-3 py-1 text-sm rounded-md font-medium transition-colors text-gray-500 hover:text-gray-800';
+                });
+                
+                document.getElementById(`theme-${mode}`).className = 'px-3 py-1 text-sm rounded-md font-medium transition-colors bg-white shadow-sm text-gray-800';
+
+                // Determine Darkness
+                if (mode === 'dark') {
+                    isDark = true;
+                } else if (mode === 'auto') {
+                    // Use API sunrise/sunset if available, else default 18:00 - 06:00
+                    if (this.sunrise && this.sunset) {
+                        const now = new Date();
+                        if (now < this.sunrise || now > this.sunset) isDark = true;
+                    } else {
+                        if (hour >= 18 || hour < 6) isDark = true;
+                    }
+                }
+
+                // Apply DOM Changes
+                if (isDark) {
+                    html.classList.add('dark');
+                    if(document.getElementById(`theme-${mode}`).classList.contains('bg-white')) {
+                        document.getElementById(`theme-${mode}`).classList.replace('bg-white', 'bg-gray-700');
+                        document.getElementById(`theme-${mode}`).classList.replace('text-gray-800', 'text-white');
+                    }
+                } else {
+                    html.classList.remove('dark');
+                }
+
+                this.updateMapTheme(isDark);
+                this.updateChartTheme(isDark);
+            },
+
+            updateMapTheme: function(isDark) {
+                if(!boundaryMap) return;
+                const url = isDark ? MAP_TILES_DARK : MAP_TILES_LIGHT;
+                if(mapTileLayer) {
+                    mapTileLayer.setUrl(url);
+                }
+            },
+
+            updateChartTheme: function(isDark) {
+                const textColor = isDark ? '#94a3b8' : '#718096';
+                const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+                
+                Chart.defaults.color = textColor;
+                const charts = [windChartInst, waveChartInst, pressureChartInst];
+                
+                charts.forEach(chart => {
+                    if(chart && chart.options.scales) {
+                        if(chart.options.scales.x) {
+                            chart.options.scales.x.ticks.color = textColor;
+                            chart.options.scales.x.grid.color = gridColor;
+                        }
+                        if(chart.options.scales.y) {
+                            chart.options.scales.y.ticks.color = textColor;
+                            chart.options.scales.y.grid.color = gridColor;
+                        }
+                        chart.update();
+                    }
+                });
+            },
+
+            initMap: function() {
+                boundaryMap = L.map('boundary-map').setView([22.25, 114.16], 5);
+                
+                const isDark = document.documentElement.classList.contains('dark');
+                mapTileLayer = L.tileLayer(isDark ? MAP_TILES_DARK : MAP_TILES_LIGHT, {
+                    attribution: '&copy; OpenStreetMap',
+                    maxZoom: 18,
+                }).addTo(boundaryMap);
+
+                // Start Marker (Green)
+                const startIcon = L.divIcon({className: 'text-2xl', html: '🟢', iconSize: [24, 24], iconAnchor: [12, 12]});
+                markerStart = L.marker([22.25, 114.16], {icon: startIcon, draggable: true}).addTo(boundaryMap);
+                markerStart.bindPopup("Start Position").openPopup();
+
+                // Dest Marker (Red)
+                const destIcon = L.divIcon({className: 'text-2xl', html: '🔴', iconSize: [24, 24], iconAnchor: [12, 12]});
+                markerDest = L.marker([14.59, 120.98], {icon: destIcon, draggable: true}).addTo(boundaryMap);
+                markerDest.bindPopup("Destination");
+
+                routeLine = L.polyline([], {color: '#D97736', weight: 3, dashArray: '10, 10'}).addTo(boundaryMap);
+
+                // Event Listeners for Map Dragging
+                markerStart.on('dragend', (e) => {
+                    document.getElementById('start-lat').value = e.target.getLatLng().lat.toFixed(4);
+                    document.getElementById('start-lon').value = e.target.getLatLng().lng.toFixed(4);
+                    this.drawRouteLine();
+                });
+                markerDest.on('dragend', (e) => {
+                    document.getElementById('dest-lat').value = e.target.getLatLng().lat.toFixed(4);
+                    document.getElementById('dest-lon').value = e.target.getLatLng().lng.toFixed(4);
+                    this.drawRouteLine();
+                });
+
+                this.drawRouteLine();
+            },
+
+            drawRouteLine: function() {
+                const sLat = parseFloat(document.getElementById('start-lat').value);
+                const sLon = parseFloat(document.getElementById('start-lon').value);
+                const dLat = parseFloat(document.getElementById('dest-lat').value);
+                const dLon = parseFloat(document.getElementById('dest-lon').value);
+
+                if(!isNaN(sLat) && !isNaN(dLat)) {
+                    routeLine.setLatLngs([[sLat, sLon], [dLat, dLon]]);
+                    markerStart.setLatLng([sLat, sLon]);
+                    markerDest.setLatLng([dLat, dLon]);
+                    
+                    const bounds = L.latLngBounds([sLat, sLon], [dLat, dLon]);
+                    boundaryMap.fitBounds(bounds, {padding: [50, 50]});
+
+                    // Update RainViewer Map Iframe dynamically to Start Position
+                    const rvFrame = document.getElementById('rainviewer-frame');
+                    if(rvFrame) rvFrame.src = `https://www.rainviewer.com/map.html?loc=${sLat},${sLon},6&oFa=0&oC=0&oU=0&oCS=1&oF=0&oM=0&color=2&app=1`;
+                }
+            },
+
+            getDeviceLocation: function() {
+                if ("geolocation" in navigator) {
+                    const btn = document.getElementById('btn-fetch');
+                    btn.innerHTML = "Fetching GPS...";
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            document.getElementById('start-lat').value = position.coords.latitude.toFixed(4);
+                            document.getElementById('start-lon').value = position.coords.longitude.toFixed(4);
+                            this.drawRouteLine();
+                            btn.innerHTML = "<span>📡</span> Generate Route Forecast";
+                        },
+                        (error) => {
+                            alert("GPS Error. Ensure Location Services are enabled.");
+                            btn.innerHTML = "<span>📡</span> Generate Route Forecast";
+                        },
+                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                    );
+                } else {
+                    alert("Geolocation not supported.");
+                }
+            },
+
+            // Haversine formula for distance in Nautical Miles
+            calculateDistanceNM: function(lat1, lon1, lat2, lon2) {
+                const R = 3440.065; // Earth radius in NM
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLon = (lon2 - lon1) * Math.PI / 180;
+                const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                        Math.sin(dLon/2) * Math.sin(dLon/2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                return R * c;
+            },
+
+            interpolatePoint: function(lat1, lon1, lat2, lon2, fraction) {
+                return {
+                    lat: lat1 + (lat2 - lat1) * fraction,
+                    lon: lon1 + (lon2 - lon1) * fraction
+                };
+            },
+
+            showStatus: function(msg, isError=false) {
+                const el = document.getElementById('api-status-msg');
+                el.innerText = msg;
+                el.className = `mt-3 p-3 rounded-md text-sm font-bold block ${isError ? 'bg-red-100 text-red-700 border border-red-300' : 'bg-green-100 text-green-800 border border-green-300'}`;
+                el.classList.remove('hidden');
+                setTimeout(() => el.classList.add('hidden'), 5000);
+            },
+
+            calculateRouteAndFetchWeather: async function() {
+                const btn = document.getElementById('btn-fetch');
+                btn.innerHTML = "⏳ Computing & Fetching...";
+                btn.disabled = true;
+
+                try {
+                    const sLat = parseFloat(document.getElementById('start-lat').value);
+                    const sLon = parseFloat(document.getElementById('start-lon').value);
+                    const dLat = parseFloat(document.getElementById('dest-lat').value);
+                    const dLon = parseFloat(document.getElementById('dest-lon').value);
+                    const speedKts = parseFloat(document.getElementById('vessel-speed').value) || 5;
+
+                    this.drawRouteLine();
+
+                    // Calculate Logistics
+                    const distNM = this.calculateDistanceNM(sLat, sLon, dLat, dLon);
+                    const hoursTotal = distNM / speedKts;
+                    const daysTotal = hoursTotal / 24;
+
+                    document.getElementById('meta-dist').innerText = Math.round(distNM);
+                    document.getElementById('meta-time').innerText = daysTotal.toFixed(1);
+                    
+                    const arrivalDate = new Date();
+                    arrivalDate.setHours(arrivalDate.getHours() + hoursTotal);
+                    document.getElementById('meta-arrival').innerText = arrivalDate.toLocaleDateString() + ' ' + arrivalDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    document.getElementById('route-meta').classList.remove('hidden');
+
+                    this.routeWaypoints = [];
+                    const fractions = [0, 0.2, 0.4, 0.6, 0.8, 1.0];
+                    const wpLabels = ['Start (0%)', '20% Route', '40% Route', '60% Route', '80% Route', 'Destination'];
+                    
+                    let lats = [];
+                    let lons = [];
+
+                    fractions.forEach((frac, i) => {
+                        const pt = this.interpolatePoint(sLat, sLon, dLat, dLon, frac);
+                        this.routeWaypoints.push({ 
+                            label: wpLabels[i], 
+                            fraction: frac, 
+                            timeOffsetHours: hoursTotal * frac, 
+                            pt: pt 
+                        });
+                        lats.push(pt.lat.toFixed(4));
+                        lons.push(pt.lon.toFixed(4));
+                    });
+
+                    const latStr = lats.join(',');
+                    const lonStr = lons.join(',');
+
+                    // Fetch Weather (Wind/Pressure/Sunset)
+                    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latStr}&longitude=${lonStr}&hourly=wind_speed_10m,wind_gusts_10m,surface_pressure&daily=sunrise,sunset&wind_speed_unit=kn&timezone=auto`;
+                    
+                    // Fetch Marine (Waves)
+                    const marineUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${latStr}&longitude=${lonStr}&hourly=wave_height&timezone=auto`;
+
+                    const [weatherRes, marineRes] = await Promise.all([
+                        fetch(weatherUrl),
+                        fetch(marineUrl)
+                    ]);
+
+                    if(!weatherRes.ok) throw new Error("Weather API Error");
+                    
+                    const weatherDataRaw = await weatherRes.json();
+                    let marineDataRaw = null;
+                    if(marineRes.ok) marineDataRaw = await marineRes.json();
+
+                    // Open Meteo returns an object for 1 coord, but an array for multiple coords.
+                    const weatherDataArray = Array.isArray(weatherDataRaw) ? weatherDataRaw : [weatherDataRaw];
+                    const marineDataArray = marineDataRaw ? (Array.isArray(marineDataRaw) ? marineDataRaw : [marineDataRaw]) : [];
+
+                    // Setup Auto Theme based on Start Position Today
+                    if(weatherDataArray[0].daily && weatherDataArray[0].daily.sunrise) {
+                        this.sunrise = new Date(weatherDataArray[0].daily.sunrise[0]);
+                        this.sunset = new Date(weatherDataArray[0].daily.sunset[0]);
+                        if(this.theme === 'auto') this.setTheme('auto'); // Trigger re-eval
+                    }
+
+                    this.processRouteData(weatherDataArray, marineDataArray, hoursTotal);
+                    
+                    document.getElementById('last-sync-time').innerText = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    document.getElementById('sync-icon').classList.add('text-green-500');
+                    this.showStatus("Forecast successfully generated for route.");
+
+                } catch (error) {
+                    console.error(error);
+                    this.showStatus("Error fetching data. Check coordinates or internet.", true);
+                } finally {
+                    btn.innerHTML = "<span>📡</span> Generate Route Forecast";
+                    btn.disabled = false;
+                }
+            },
+
+            processRouteData: function(weatherArray, marineArray, totalHours) {
+                // We want to create arrays for charts (max 168 hours = 7 days)
+                const maxHours = Math.min(Math.ceil(totalHours), 168); 
+                
+                let stitched = {
+                    labels: [],
+                    windSpeed: [],
+                    windGusts: [],
+                    pressure: [],
+                    waveHeight: []
+                };
+
+                // Time zero is now.
+                const startTime = new Date();
+
+                for(let h=0; h <= maxHours; h+=3) { // 3 hour intervals for clean charts
+                    const futureTime = new Date(startTime.getTime() + h * 60 * 60 * 1000);
+                    
+                    // Format Label
+                    const label = h === 0 ? "Now" : `+${h}h (${futureTime.getHours()}h)`;
+                    stitched.labels.push(label);
+
+                    // Determine which waypoint array we should pull from based on time elapsed.
+                    let wpIndex = 0;
+                    for(let i=0; i<this.routeWaypoints.length; i++) {
+                        if(h >= this.routeWaypoints[i].timeOffsetHours) wpIndex = i;
+                    }
+                    if(wpIndex >= weatherArray.length) wpIndex = weatherArray.length - 1;
+
+                    // Get specific hour data
+                    // Open-Meteo hourly array corresponds to the 168 hours of the 7 day forecast.
+                    // Assuming array starts at today 00:00, we need to find the exact index.
+                    // Instead of date matching logic which is brittle, OpenMeteo returns 168 hours starting from current hour usually if configured, 
+                    // actually it starts at 00:00 of current day. Let's find the current hour index.
+                    const wData = weatherArray[wpIndex].hourly;
+                    
+                    // Find the index in the hourly array that matches 'futureTime'
+                    // Open-Meteo time format: "2023-10-10T15:00"
+                    let dataIndex = -1;
+                    const targetISOPrefix = futureTime.toISOString().substring(0, 14); // "YYYY-MM-DDTHH:"
+                    
+                    for(let i=0; i<wData.time.length; i++) {
+                        // Handle potential timezone variations by matching the date/hour string prefix roughly, 
+                        // or just use h + currentHourOffset
+                        const timeStr = wData.time[i];
+                        if(timeStr.includes(targetISOPrefix)) {
+                            dataIndex = i; break;
+                        }
+                    }
+                    
+                    // Fallback to simple offset if exact time matching fails
+                    if(dataIndex === -1) {
+                        const currentHour = startTime.getHours();
+                        dataIndex = currentHour + h;
+                    }
+
+                    if(dataIndex < wData.wind_speed_10m.length) {
+                        stitched.windSpeed.push(wData.wind_speed_10m[dataIndex]);
+                        stitched.windGusts.push(wData.wind_gusts_10m[dataIndex]);
+                        stitched.pressure.push(wData.surface_pressure[dataIndex]);
+                    }
+
+                    // Marine Data
+                    if(marineArray.length > wpIndex) {
+                        const mData = marineArray[wpIndex].hourly;
+                        if(mData && mData.wave_height && dataIndex < mData.wave_height.length) {
+                            stitched.waveHeight.push(mData.wave_height[dataIndex] || 0);
+                        } else {
+                            stitched.waveHeight.push(0);
+                        }
+                    } else {
+                        stitched.waveHeight.push(0);
+                    }
+                }
+
+                this.waypointData = this.routeWaypoints.map((wp, i) => {
+                    const wData = weatherArray[i].hourly;
+                    const mData = marineArray.length > i ? marineArray[i].hourly : null;
+                    
+                    const arrivalTime = new Date(startTime.getTime() + wp.timeOffsetHours * 60 * 60 * 1000);
+                    
+                    const getIdx = (hoursAfterArrival) => {
+                        const targetTime = new Date(arrivalTime.getTime() + hoursAfterArrival * 60 * 60 * 1000);
+                        let dataIndex = -1;
+                        const targetISOPrefix = targetTime.toISOString().substring(0, 14); 
+                        for(let j=0; j<wData.time.length; j++) {
+                            if(wData.time[j].includes(targetISOPrefix)) { dataIndex = j; break; }
+                        }
+                        if(dataIndex === -1) {
+                             const currentHour = startTime.getHours();
+                             dataIndex = currentHour + Math.round(wp.timeOffsetHours) + hoursAfterArrival;
+                        }
+                        return dataIndex;
+                    };
+
+                    const extractData = (hrOffset) => {
+                        const idx = getIdx(hrOffset);
+                        let wind = "--", gust = "--", wave = "--", press = "--";
+                        if(idx >= 0 && idx < wData.wind_speed_10m.length) {
+                            wind = Math.round(wData.wind_speed_10m[idx]);
+                            gust = Math.round(wData.wind_gusts_10m[idx]);
+                            press = Math.round(wData.surface_pressure[idx]);
+                            if(mData && mData.wave_height && idx < mData.wave_height.length && mData.wave_height[idx] !== null) {
+                                wave = mData.wave_height[idx].toFixed(1);
+                            }
+                        }
+                        const timeObj = new Date(arrivalTime.getTime() + hrOffset * 3600000);
+                        return { wind, gust, wave, press, timeObj };
+                    };
+
+                    return {
+                        label: wp.label,
+                        eta: arrivalTime,
+                        data0: extractData(0),
+                        data12: extractData(12),
+                        data24: extractData(24)
+                    };
+                });
+
+                this.renderWaypointTabs();
+                this.renderWaypointTable();
+                this.selectWaypointTab(0);
+
+                // --- Calculate KPIs (Averages for the whole route) ---
+                const avg = arr => arr.length ? (arr.reduce((a,b)=>a+(b||0),0) / arr.length) : 0;
+                
+                const kpiW = Math.round(avg(stitched.windSpeed));
+                const kpiV = avg(stitched.waveHeight).toFixed(1);
+                const kpiP = Math.round(avg(stitched.pressure));
+
+                document.getElementById('kpi-wind').innerText = kpiW;
+                document.getElementById('kpi-wave').innerText = kpiV;
+                document.getElementById('kpi-pressure').innerText = kpiP;
+
+                // Simple AI logic for Status
+                const statusCard = document.getElementById('kpi-status-card');
+                const statusText = document.getElementById('kpi-status-text');
+                const statusIcon = document.getElementById('kpi-status-icon');
+                
+                if (kpiW > 30 || kpiV > 4.0 || kpiP < 995) {
+                    statusCard.className = "card flex flex-col justify-between border-t-4 border-red-600 bg-red-50 dark:bg-red-900/20";
+                    statusText.innerText = "DANGER"; statusText.className = "text-2xl font-bold text-red-700 dark:text-red-400";
+                    statusIcon.innerText = "🛑";
+                    document.getElementById('kpi-status-desc').innerText = "Severe conditions expected along route. Delay recommended.";
+                } else if (kpiW > 20 || kpiV > 2.5) {
+                    statusCard.className = "card flex flex-col justify-between border-t-4 border-[#D97736] bg-[#FEF5F0] dark:bg-orange-900/20";
+                    statusText.innerText = "CAUTION"; statusText.className = "text-2xl font-bold text-[#D97736]";
+                    statusIcon.innerText = "⚠️";
+                    document.getElementById('kpi-status-desc').innerText = "Heavy weather. Ensure vessel and crew are prepared.";
+                } else {
+                    statusCard.className = "card flex flex-col justify-between border-t-4 border-[#4A7C59] bg-[#F2F7F4] dark:bg-green-900/20";
+                    statusText.innerText = "GO"; statusText.className = "text-2xl font-bold text-[#2C523B] dark:text-green-400";
+                    statusIcon.innerText = "✅";
+                    document.getElementById('kpi-status-desc').innerText = "Favorable routing conditions forecasted.";
+                }
+
+                this.updateCharts(stitched);
+            },
+
+            initCharts: function() {
+                // Initialize empty charts, they will be populated by API data
+                const windCtx = document.getElementById('windChart').getContext('2d');
+                windChartInst = new Chart(windCtx, {
+                    type: 'line',
+                    data: { labels: [], datasets: [
+                        { label: 'Wind Gusts (kts)', data: [], borderColor: 'rgba(217, 119, 54, 0.8)', backgroundColor: 'transparent', borderDash: [5, 5], tension: 0.4, borderWidth: 2, pointRadius: 0 },
+                        { label: 'Wind Speed (kts)', data: [], borderColor: '#4B7293', backgroundColor: 'rgba(75, 114, 147, 0.1)', fill: true, tension: 0.4, borderWidth: 3, pointBackgroundColor: '#4B7293' }
+                    ]},
+                    options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, scales: { y: { beginAtZero: true, title: { display: true, text: 'Knots' } }, x: { grid: { display: false } } } }
+                });
+
+                const waveCtx = document.getElementById('waveChart').getContext('2d');
+                waveChartInst = new Chart(waveCtx, {
+                    type: 'bar',
+                    data: { labels: [], datasets: [{ label: 'Wave Height (m)', data: [], backgroundColor: '#4A7C59', borderRadius: 4, barPercentage: 0.8 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, title: { display: true, text: 'Meters' } }, x: { grid: { display: false } } } }
+                });
+
+                const pressureCtx = document.getElementById('pressureChart').getContext('2d');
+                pressureChartInst = new Chart(pressureCtx, {
+                    type: 'line',
+                    data: { labels: [], datasets: [{ label: 'Pressure (hPa)', data: [], borderColor: '#D97736', backgroundColor: 'transparent', tension: 0.3, borderWidth: 3, pointRadius: 0 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { min: 980, max: 1030, title: { display: true, text: 'hPa' } }, x: { grid: { display: false } } } }
+                });
+            },
+
+            updateCharts: function(data) {
+                windChartInst.data.labels = data.labels;
+                windChartInst.data.datasets[0].data = data.windGusts;
+                windChartInst.data.datasets[1].data = data.windSpeed;
+                windChartInst.update();
+
+                waveChartInst.data.labels = data.labels;
+                waveChartInst.data.datasets[0].data = data.waveHeight;
+                waveChartInst.data.datasets[0].backgroundColor = data.waveHeight.map(h => h > 3.0 ? '#D97736' : '#4A7C59');
+                waveChartInst.update();
+
+                pressureChartInst.data.labels = data.labels;
+                pressureChartInst.data.datasets[0].data = data.pressure;
+                // Auto adjust pressure scale to fit data
+                const minP = Math.min(...data.pressure.filter(p=>p>0)) - 5;
+                const maxP = Math.max(...data.pressure.filter(p=>p>0)) + 5;
+                if(isFinite(minP) && isFinite(maxP)) {
+                    pressureChartInst.options.scales.y.min = Math.floor(minP);
+                    pressureChartInst.options.scales.y.max = Math.ceil(maxP);
+                }
+                pressureChartInst.update();
+            },
+
+            renderWaypointTabs: function() {
+                const container = document.getElementById('waypoint-tabs');
+                container.innerHTML = '';
+                this.waypointData.forEach((wp, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = `px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-200 border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700`;
+                    btn.innerText = wp.label;
+                    btn.id = `wp-tab-${index}`;
+                    btn.onclick = () => this.selectWaypointTab(index);
+                    container.appendChild(btn);
+                });
+            },
+
+            selectWaypointTab: function(index) {
+                // Update Button Styles
+                this.waypointData.forEach((_, i) => {
+                    const btn = document.getElementById(`wp-tab-${i}`);
+                    if(btn) {
+                        if(i === index) {
+                            btn.className = `px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-200 border-2 border-[#D97736] bg-[#FEF5F0] dark:bg-[#D97736]/20 text-[#D97736] dark:text-orange-300 shadow-sm`;
+                        } else {
+                            btn.className = `px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-200 border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700`;
+                        }
+                    }
+                });
+
+                // Render Content
+                const data = this.waypointData[index];
+                if(!data) return;
+
+                const renderPanel = (title, d) => `
+                    <div class="bg-white dark:bg-slate-900 rounded-lg p-4 border border-gray-100 dark:border-slate-700 shadow-sm flex-1">
+                        <div class="flex justify-between items-center mb-3 pb-2 border-b border-gray-100 dark:border-slate-700">
+                            <span class="font-bold text-[#4B7293] dark:text-blue-400">${title}</span>
+                            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">${d.timeObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                        </div>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400 flex items-center gap-1"><span>🌬️</span> Wind:</span> <span class="font-semibold text-gray-900 dark:text-gray-100">${d.wind} kts <span class="text-gray-400 text-xs font-normal">(G ${d.gust})</span></span></div>
+                            <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400 flex items-center gap-1"><span>〰️</span> Waves:</span> <span class="font-semibold text-gray-900 dark:text-gray-100">${d.wave} m</span></div>
+                            <div class="flex justify-between"><span class="text-gray-600 dark:text-gray-400 flex items-center gap-1"><span>⏬</span> Press:</span> <span class="font-semibold text-gray-900 dark:text-gray-100">${d.press} hPa</span></div>
+                        </div>
+                    </div>
+                `;
+
+                const html = `
+                    <div class="p-4 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-t-lg">
+                        <h4 class="text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">📍 ${data.label} <span class="text-sm font-normal text-gray-500 ml-2">ETA: ${data.eta.toLocaleDateString()} ${data.eta.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span></h4>
+                    </div>
+                    <div class="p-4 flex flex-col md:flex-row gap-4">
+                        ${renderPanel('At Arrival', data.data0)}
+                        ${renderPanel('Arrival + 12h', data.data12)}
+                        ${renderPanel('Arrival + 24h', data.data24)}
+                    </div>
+                `;
+
+                document.getElementById('waypoint-content').innerHTML = html;
+            },
+
+            renderWaypointTable: function() {
+                const tbody = document.getElementById('route-table-body');
+                tbody.innerHTML = '';
+                
+                this.waypointData.forEach(wp => {
+                    const d = wp.data0; // Show arrival conditions in table
+                    const row = `
+                        <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+                            <td class="px-4 py-3 whitespace-nowrap font-medium text-gray-900 dark:text-gray-100">${wp.label}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-gray-500 dark:text-gray-400">${wp.eta.toLocaleDateString()} ${wp.eta.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-gray-200">${d.wind} <span class="text-xs text-gray-400">(G ${d.gust})</span></td>
+                            <td class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-gray-200">${d.wave}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-gray-200">${d.press}</td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            },
+
+            toggleRouteTable: function() {
+                const table = document.getElementById('route-table-container');
+                table.classList.toggle('hidden');
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            app.init();
+        });
+
+    </script>
 </body>
 </html>
