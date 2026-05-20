@@ -50,37 +50,76 @@
         .dark .tab-inactive { color: #9ca3af; }
         .dark .tab-active { color: #60a5fa; border-color: #60a5fa; }
         
-        #map-container { height: 400px; width: 100%; z-index: 10; border-radius: 0.5rem; overflow: hidden; }
+        #map-container { height: 500px; width: 100%; z-index: 10; border-radius: 0.5rem; overflow: hidden; }
 
         .wp-marker {
-            border-radius: 50%;
-            border: 2px solid #FFFFFF;
-            box-shadow: 0 0 4px rgba(0,0,0,0.5);
+            border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 0 4px rgba(0,0,0,0.5);
             display: flex; align-items: center; justify-content: center;
-            font-size: 10px; font-weight: bold; color: white;
-            cursor: pointer;
+            font-size: 10px; font-weight: bold; color: white; cursor: pointer;
         }
         .wp-start { background-color: #4A7C59; }
         .wp-mid { background-color: #4B7293; }
         .wp-dest { background-color: #D97736; }
+
+        /* Modified Tooltips: Rectangular, longer pointers */
+        .custom-tooltip {
+            background-color: rgba(255, 255, 255, 0.95); border: 1px solid #ccc;
+            border-radius: 4px; padding: 6px 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            color: #333; white-space: nowrap;
+        }
+        .dark .custom-tooltip {
+            background-color: rgba(30, 30, 30, 0.95); border: 1px solid #555; color: #E0E0E0;
+        }
+        
+        /* Lengthened tooltip pointers */
+        .leaflet-tooltip-top:before { border-top-color: rgba(255, 255, 255, 0.95); margin-bottom: -15px; }
+        .leaflet-tooltip-bottom:before { border-bottom-color: rgba(255, 255, 255, 0.95); margin-top: -15px; }
+        .leaflet-tooltip-left:before { border-left-color: rgba(255, 255, 255, 0.95); margin-right: -15px; }
+        .leaflet-tooltip-right:before { border-right-color: rgba(255, 255, 255, 0.95); margin-left: -15px; }
+        
+        .dark .leaflet-tooltip-top:before { border-top-color: rgba(30, 30, 30, 0.95); }
+        .dark .leaflet-tooltip-bottom:before { border-bottom-color: rgba(30, 30, 30, 0.95); }
+        .dark .leaflet-tooltip-left:before { border-left-color: rgba(30, 30, 30, 0.95); }
+        .dark .leaflet-tooltip-right:before { border-right-color: rgba(30, 30, 30, 0.95); }
+
+        /* Strict B&W Print Specific Styling */
+        @media print {
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            body { background: white !important; color: black !important; padding-bottom: 0 !important; }
+            .card { box-shadow: none !important; border: 1px solid #000 !important; page-break-inside: avoid; background-color: white !important; margin-bottom: 1rem !important; }
+            header, .no-print, #loading-indicator, .bg-yellow-50, footer { display: none !important; }
+            #map-container { height: 600px !important; border: 2px solid #000 !important; }
+            .leaflet-control-container { display: none !important; }
+            h1, h2, h3, h4, span, p, div, th, td { color: black !important; }
+            
+            .bg-gray-50, .bg-gray-100 { background-color: white !important; border: 1px solid #ddd !important; }
+            .border-b, .border-t, .border { border-color: #000 !important; }
+            .wp-marker { border: 2px solid #000 !important; color: #000 !important; }
+            .custom-tooltip { border: 1px solid #000 !important; background-color: #FFF !important; }
+
+            #waypoint-tabs { display: none !important; }
+            #waypoint-content { display: block !important; }
+            
+            .print-header { display: block !important; margin-bottom: 1rem; font-weight: bold; font-size: 1.2rem; border-bottom: 2px solid #000; padding-bottom: 0.5rem; }
+            @page { margin: 1cm; size: landscape; }
+        }
     </style>
 </head>
 <body class="antialiased selection:bg-ocean selection:text-white pb-12 transition-colors duration-300 bg-[#F9F8F6]">
 
-    <div class="bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-400 p-4">
+    <div class="bg-yellow-50 dark:bg-yellow-900/30 border-l-4 border-yellow-400 p-4 no-print">
         <div class="max-w-7xl mx-auto flex items-start">
             <div class="flex-shrink-0"><span class="text-yellow-600 dark:text-yellow-400 text-xl">⚠️</span></div>
             <div class="ml-3">
                 <p class="text-sm text-yellow-800 dark:text-yellow-200 font-medium">
-                    <strong>DISCLAIMER & CONDITIONS OF USE:</strong> This application is a secondary aid to navigation. It relies on third-party API data (<a href="https://open-meteo.com/" target="_blank" class="underline">Open-Meteo</a>, <a href="https://predictwind.com/" target="_blank" class="underline">PredictWind</a>, RainViewer) which may be delayed or inaccurate. 
-                    <strong>CRITICAL: This routing algorithm calculates based on drawn waypoints and constant speed. It DOES NOT calculate the effects of ocean currents, tidal streams, leeway, or vessel polar performance.</strong> 
-                    Use entirely at your own risk. The Master of the vessel remains solely responsible for safety.
+                    <strong>DISCLAIMER & CONDITIONS OF USE:</strong> This application is a secondary aid to navigation. It relies on third-party API data (<a href="https://open-meteo.com/" target="_blank" class="underline">Open-Meteo</a>, <a href="https://predictwind.com/" target="_blank" class="underline">PredictWind</a>, <a href="https://www.rainviewer.com/" target="_blank" class="underline">RainViewer</a>) which may be delayed or inaccurate. 
+                    <strong>CRITICAL: This routing algorithm calculates based on drawn waypoints and constant speed. It DOES NOT calculate the effects of ocean currents, tidal streams, leeway, or vessel polar performance.</strong> Use entirely at your own risk.
                 </p>
             </div>
         </div>
     </div>
 
-    <header class="bg-white dark:bg-[#1E1E1E] border-b border-gray-200 dark:border-[#333] sticky top-0 z-50 transition-colors duration-300 shadow-sm">
+    <header class="bg-white dark:bg-[#1E1E1E] border-b border-gray-200 dark:border-[#333] sticky top-0 z-50 transition-colors duration-300 shadow-sm no-print">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <span class="text-2xl">⛵</span>
@@ -98,7 +137,11 @@
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 space-y-8">
         
-        <section class="card border-t-4 border-ocean">
+        <div class="hidden print:block print-header" id="print-header-top">
+            <!-- Populated by JS -->
+        </div>
+
+        <section class="card border-t-4 border-ocean no-print">
             <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">🧭 Voyage Configuration</h2>
             
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
@@ -152,25 +195,49 @@
         </section>
 
         <section class="card">
-            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1 flex items-center gap-2">🗺️ Interactive Tactical Map</h3>
-            <div class="mb-4 bg-green-50 dark:bg-green-900/20 p-3 rounded border border-green-200 dark:border-green-800 flex items-start gap-3">
+            <div class="flex justify-between items-center mb-1">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">🗺️ Tactical Route Map</h3>
+            </div>
+            <div class="mb-4 bg-green-50 dark:bg-green-900/20 p-3 rounded border border-green-200 dark:border-green-800 flex items-start gap-3 no-print">
                 <span class="text-xl">💡</span>
                 <p class="text-sm text-gray-700 dark:text-gray-300">
-                    <strong>Drag any marker (Start, 20%, 40%, etc.) to customize your route path.</strong><br>
-                    The system automatically recalculates ETAs and fetches new weather data the moment you drop a marker. <span class="font-bold underline text-green-700 dark:text-green-400">No need to click the update button.</span>
+                    <strong>Drag markers</strong> to customize your route. <strong>Click a marker</strong> to rotate its tooltip box (Top/Bottom/Left/Right) to prevent overlapping before exporting the PDF.
                 </p>
             </div>
             <div id="map-container" class="border border-gray-200 dark:border-[#444]"></div>
         </section>
 
-        <div id="loading-indicator" class="hidden flex-col items-center justify-center py-12">
+        <div id="loading-indicator" class="hidden flex-col items-center justify-center py-12 no-print">
             <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-ocean mb-4"></div>
             <p class="text-gray-600 dark:text-gray-400 font-medium text-center px-4">Calculating route metrics and fetching multi-point <br>meteorological & marine data...</p>
         </div>
 
         <div id="data-dashboard" class="space-y-8 hidden">
             
-            <section id="kpi-section">
+            <section class="card bg-gray-50 dark:bg-transparent">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 border-b dark:border-[#333] pb-4 gap-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">📍 Tactical Waypoints</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Forecast conditions aligned perfectly with your ETA at each point.</p>
+                    </div>
+                    <div class="flex gap-2 no-print">
+                        <button onclick="app.toggleViewMode()" id="btn-toggle-view" class="px-4 py-2 bg-white dark:bg-[#2A2A2A] border border-gray-300 dark:border-[#444] rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-[#333] transition-colors">
+                            👁️ View Full Route Table
+                        </button>
+                        <button onclick="app.exportPDF()" class="px-4 py-2 bg-ocean hover:bg-oceanDark text-white rounded-md shadow-sm text-sm font-medium transition-colors flex items-center gap-2">
+                            🖨️ Export PDF Report
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-2 mb-4 border-b dark:border-[#333] pb-2 no-print" id="tab-navigation-container">
+                    <!-- Tabs and arrows populated by JS -->
+                </div>
+
+                <div id="waypoint-content" class="bg-white dark:bg-[#1E1E1E] p-4 rounded-lg border border-gray-200 dark:border-[#333] overflow-x-auto"></div>
+            </section>
+
+            <section id="kpi-section" class="print:break-before-page">
                 <div class="mb-4">
                     <h3 class="text-xl font-bold text-gray-800 dark:text-white border-b-2 border-[#4B7293] pb-1 inline-block">Calculated Route Averages</h3>
                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Snapshot of conditions across the entirety of your planned voyage duration.</p>
@@ -226,22 +293,6 @@
                 </div>
             </section>
 
-            <section class="card bg-gray-50 dark:bg-transparent">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 border-b dark:border-[#333] pb-4 gap-4">
-                    <div>
-                        <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">📍 Tactical Waypoints</h3>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Forecast conditions aligned perfectly with your ETA at each point.</p>
-                    </div>
-                    <button onclick="app.toggleViewMode()" id="btn-toggle-view" class="px-4 py-2 bg-white dark:bg-[#2A2A2A] border border-gray-300 dark:border-[#444] rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-[#333] transition-colors">
-                        👁️ View Full Route Table
-                    </button>
-                </div>
-
-                <div class="flex flex-wrap gap-2 mb-4 border-b dark:border-[#333] pb-2" id="waypoint-tabs"></div>
-
-                <div id="waypoint-content" class="bg-white dark:bg-[#1E1E1E] p-4 rounded-lg border border-gray-200 dark:border-[#333] overflow-x-auto"></div>
-            </section>
-
             <section class="space-y-6">
                 <div class="mb-2 mt-8">
                     <h3 class="text-xl font-bold text-gray-900 dark:text-white border-b-2 border-ocean pb-1 inline-block">Rolling Forecast Models</h3>
@@ -273,21 +324,25 @@
             </section>
         </div>
 
-        <section class="mt-12 mb-8 pt-8 border-t border-gray-300 dark:border-[#444]">
+        <section class="mt-12 mb-8 pt-8 border-t border-gray-300 dark:border-[#444] no-print predictwind-section">
             <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Professional Wide-Area Tools</h3>
             <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Strategic synoptic overviews utilizing third-party services.</p>
             
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div class="card p-0 overflow-hidden shadow-md border-t-4 border-ocean">
                     <div class="p-4 bg-gray-50 dark:bg-[#2A2A2A] border-b border-gray-200 dark:border-[#444]">
-                        <h4 class="font-bold text-gray-900 dark:text-white flex items-center gap-2"><span>🌐</span> PredictWind Routing (HK - Taiwan)</h4>
+                        <h4 class="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                            <a href="https://predictwind.com/" target="_blank" class="hover:underline flex items-center gap-2"><span>🌐</span> PredictWind Routing (HK - Taiwan)</a>
+                        </h4>
                     </div>
                     <iframe src="https://forecast.predictwind.com/embed/HKTaiwan" width="100%" height="500" frameborder="0" style="border:0;" allowfullscreen></iframe>
                 </div>
 
                 <div class="card p-0 overflow-hidden shadow-md border-t-4 border-ocean">
                     <div class="p-4 bg-gray-50 dark:bg-[#2A2A2A] border-b border-gray-200 dark:border-[#444]">
-                        <h4 class="font-bold text-gray-900 dark:text-white flex items-center gap-2"><span>🌧️</span> RainViewer Precipitation Radar</h4>
+                        <h4 class="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                            <a href="https://www.rainviewer.com/" target="_blank" class="hover:underline flex items-center gap-2"><span>🌧️</span> RainViewer Precipitation Radar</a>
+                        </h4>
                     </div>
                     <iframe id="rainviewer-frame" src="https://www.rainviewer.com/map.html?loc=22.3,114.1,6&oFa=0&oC=0&oU=0&oCS=1&oF=0&oAP=1&c=1&o=83&lm=0&layer=radar&sm=1&sn=1" width="100%" height="500" frameborder="0" style="border:0;" allowfullscreen></iframe>
                 </div>
@@ -295,6 +350,12 @@
         </section>
 
     </main>
+
+    <!-- Footer added -->
+    <footer class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 py-6 border-t border-gray-200 dark:border-[#444] text-center text-sm text-gray-500 dark:text-gray-400 no-print">
+        <p>&copy; 2026 Arcturus Sailing Team. All Rights Reserved.</p>
+        <p class="mt-1 text-xs">Weather data generated is for informational purposes only and must not be solely relied upon for critical navigation decisions.</p>
+    </footer>
 
     <script>
         const themeManager = {
@@ -358,17 +419,12 @@
             },
 
             initMap: function() {
-                // Focus tighter around HK & Taiwan
                 this.map = L.map('map-container', {
-                    minZoom: 4,
-                    worldCopyJump: false
+                    minZoom: 4, worldCopyJump: false
                 }).setView([23.7, 117.9], 6);
 
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                    attribution: '© OpenStreetMap contributors © CARTO',
-                    maxZoom: 12,
-                    minZoom: 4,
-                    noWrap: true // Prevents infinite horizontal scrolling
+                    attribution: '© OpenStreetMap contributors', maxZoom: 12, minZoom: 4, noWrap: true 
                 }).addTo(this.map);
                 
                 this.routePolyline = L.polyline([], {color: '#4B7293', weight: 4, dashArray: '5, 10'}).addTo(this.map);
@@ -416,11 +472,21 @@
                     lat: sLat + (dLat - sLat) * f,
                     lon: sLon + (dLon - sLon) * f,
                     label: index === 0 ? "Start" : index === 5 ? "Dest" : `${f*100}%`,
-                    index: index
+                    index: index,
+                    tooltipDir: index % 2 === 0 ? 'top' : 'bottom' // Initial alternating direction
                 }));
 
                 this.rebuildMarkers();
                 this.fetchAndUpdate();
+            },
+
+            // Helper to get offset based on direction for longer pointers
+            getTooltipOffset: function(dir) {
+                if(dir === 'top') return [0, -20];
+                if(dir === 'bottom') return [0, 20];
+                if(dir === 'left') return [-20, 0];
+                if(dir === 'right') return [20, 0];
+                return [0,0];
             },
 
             rebuildMarkers: function() {
@@ -430,12 +496,32 @@
                     const icon = L.divIcon({
                         className: 'custom-leaflet-icon',
                         html: `<div class="wp-marker ${cClass}" style="width:24px; height:24px;">${index}</div>`,
-                        iconSize: [24, 24], iconAnchor: [12, 12], tooltipAnchor: [12, 0]
+                        iconSize: [24, 24], iconAnchor: [12, 12], tooltipAnchor: [12, 12]
                     });
 
                     const marker = L.marker([pt.lat, pt.lon], { icon: icon, draggable: true }).addTo(this.markersLayer);
-                    marker.bindTooltip(`<strong>${pt.label}</strong>`, { direction: 'top', className: 'font-mono text-xs bg-white/90 border-0 shadow-sm' });
                     
+                    const initHtml = `<div class="text-left leading-tight"><strong class="text-ocean text-xs">${pt.label}</strong><br><span class="text-[9px] text-gray-500">Calculating...</span></div>`;
+                    marker.bindTooltip(initHtml, { 
+                        direction: pt.tooltipDir, 
+                        offset: this.getTooltipOffset(pt.tooltipDir), 
+                        className: 'custom-tooltip', permanent: true, opacity: 0.95 
+                    });
+                    
+                    // Click to cycle tooltip direction
+                    marker.on('click', () => {
+                        const dirs = ['top', 'right', 'bottom', 'left'];
+                        let currentIdx = dirs.indexOf(pt.tooltipDir);
+                        pt.tooltipDir = dirs[(currentIdx + 1) % 4];
+                        
+                        marker.unbindTooltip();
+                        marker.bindTooltip(pt.tooltipContent || initHtml, {
+                            direction: pt.tooltipDir,
+                            offset: this.getTooltipOffset(pt.tooltipDir),
+                            className: 'custom-tooltip', permanent: true, opacity: 0.95
+                        });
+                    });
+
                     marker.on('dragend', (e) => {
                         const newPos = e.target.getLatLng();
                         this.routePoints[index].lat = newPos.lat;
@@ -448,7 +534,6 @@
                             document.getElementById('dest-lat').value = newPos.lat.toFixed(4);
                             document.getElementById('dest-lon').value = newPos.lng.toFixed(4);
                         }
-
                         this.fetchAndUpdate(); 
                     });
                     
@@ -486,8 +571,6 @@
                 document.getElementById('route-summary').innerHTML = `🏁 Route Distance: <strong>${Math.round(totalDist)} NM</strong> | Est. Duration: <strong>${totalHours.toFixed(1)} Hours</strong>`;
                 document.getElementById('route-summary').classList.remove('hidden');
                 this.routePolyline.setLatLngs(latlngs);
-                
-                // Set padding to 0.3 for a tighter, cleaner view around the HK/Taiwan route
                 this.map.fitBounds(this.routePolyline.getBounds().pad(0.3));
 
                 try {
@@ -516,6 +599,24 @@
                                 wave: waveVal.toFixed(1),
                                 pressure: Math.round(wData.hourly.surface_pressure[i] || 1013)
                             };
+                        });
+
+                        // Strict 3-line Tooltip Layout
+                        const f0 = pt.forecasts[0];
+                        const gustAlert = f0.gust > f0.wind + 2 ? `<span class="text-danger font-bold ml-1">(Gusts ${f0.gust})</span>` : '';
+                        
+                        pt.tooltipContent = `
+                            <div class="text-left leading-tight whitespace-nowrap">
+                                <strong class="text-ocean text-xs">${pt.label}</strong> <span class="text-[9px] text-gray-500">${this.formatCoordinate(pt.lat, pt.lon)}</span><br>
+                                <span class="text-[10px] font-bold text-gray-700 dark:text-gray-200">ETA: ${f0.actualTime}</span><br>
+                                <span class="text-[11px] text-gray-800 dark:text-gray-100">🌬️ ${f0.wind}kts ${gustAlert} | 〰️ ${f0.wave}m</span>
+                            </div>
+                        `;
+                        
+                        pt.marker.unbindTooltip();
+                        pt.marker.bindTooltip(pt.tooltipContent, {
+                            direction: pt.tooltipDir, offset: this.getTooltipOffset(pt.tooltipDir),
+                            className: 'custom-tooltip', permanent: true, opacity: 0.95
                         });
                     });
 
@@ -618,6 +719,24 @@
                 if(isDark) statusCard.style.backgroundColor = '#1E1E1E';
             },
 
+            exportPDF: function() {
+                if (this.viewMode === 'tabs') this.toggleViewMode();
+                this.map.invalidateSize();
+                
+                // Inject Print Date
+                const now = new Date();
+                const printDateStr = `Report Generated On: ${now.toLocaleDateString()} at ${now.toLocaleTimeString()}`;
+                document.getElementById('print-header-top').innerText = printDateStr;
+
+                const wasDark = document.documentElement.classList.contains('dark');
+                if (wasDark) themeManager.setTheme('light');
+                
+                setTimeout(() => {
+                    window.print();
+                    if (wasDark) themeManager.setTheme('dark');
+                }, 500);
+            },
+
             toggleViewMode: function() {
                 this.viewMode = this.viewMode === 'tabs' ? 'full' : 'tabs';
                 const btn = document.getElementById('btn-toggle-view');
@@ -625,23 +744,51 @@
                 this.buildWaypointsUI();
             },
 
+            prevTab: function() {
+                if(this.activeTab > 0) {
+                    this.activeTab--;
+                    this.buildWaypointsUI();
+                }
+            },
+
+            nextTab: function() {
+                if(this.activeTab < this.routePoints.length - 1) {
+                    this.activeTab++;
+                    this.buildWaypointsUI();
+                }
+            },
+
             buildWaypointsUI: function() {
-                const tabsContainer = document.getElementById('waypoint-tabs');
+                const navContainer = document.getElementById('tab-navigation-container');
                 const content = document.getElementById('waypoint-content');
                 
                 if (this.viewMode === 'tabs') {
-                    tabsContainer.classList.remove('hidden');
-                    tabsContainer.innerHTML = '';
+                    navContainer.classList.remove('hidden');
+                    
+                    // Build tab buttons
+                    let tabsHtml = `<div class="flex flex-wrap gap-2" id="waypoint-tabs">`;
                     this.routePoints.forEach((pt, idx) => {
-                        const btn = document.createElement('button');
-                        btn.className = `px-4 py-2 text-sm font-medium transition-colors ${idx === this.activeTab ? 'tab-active' : 'tab-inactive hover:text-gray-900 dark:hover:text-white'}`;
-                        btn.innerText = pt.label;
-                        btn.onclick = () => { this.activeTab = idx; this.buildWaypointsUI(); };
-                        tabsContainer.appendChild(btn);
+                        const activeClass = idx === this.activeTab ? 'tab-active' : 'tab-inactive hover:text-gray-900 dark:hover:text-white';
+                        tabsHtml += `<button class="px-4 py-2 text-sm font-medium transition-colors ${activeClass}" onclick="app.activeTab = ${idx}; app.buildWaypointsUI();">${pt.label}</button>`;
                     });
+                    tabsHtml += `</div>`;
+
+                    // Build arrow controls
+                    const disablePrev = this.activeTab === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-[#333]';
+                    const disableNext = this.activeTab === this.routePoints.length - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-[#333]';
+                    
+                    let controlsHtml = `
+                        <div class="flex items-center justify-between mt-2 bg-gray-50 dark:bg-[#2A2A2A] rounded p-2 border dark:border-[#444]">
+                            <button onclick="app.prevTab()" class="px-3 py-1 border rounded bg-white dark:bg-[#1E1E1E] dark:border-[#444] ${disablePrev}">⬅️ Prev Waypoint</button>
+                            <span class="font-bold text-ocean uppercase tracking-wider text-sm">Focus: ${this.routePoints[this.activeTab].label}</span>
+                            <button onclick="app.nextTab()" class="px-3 py-1 border rounded bg-white dark:bg-[#1E1E1E] dark:border-[#444] ${disableNext}">Next Waypoint ➡️</button>
+                        </div>
+                    `;
+                    
+                    navContainer.innerHTML = tabsHtml + controlsHtml;
                     content.innerHTML = this.generateSingleCardHtml(this.routePoints[this.activeTab]);
                 } else {
-                    tabsContainer.classList.add('hidden');
+                    navContainer.classList.add('hidden');
                     
                     let html = `<div class="overflow-x-auto border border-gray-200 dark:border-[#444] rounded-lg">
                         <table class="min-w-full text-left text-sm whitespace-nowrap">
@@ -664,11 +811,11 @@
                             if (fIdx === 0) {
                                 html += `<td rowspan="3" class="px-4 py-3 align-top bg-white dark:bg-[#1E1E1E]">
                                     <div class="font-bold text-ocean uppercase tracking-wider mb-1">${pt.label}</div>
-                                    <div class="text-[11px] font-mono text-gray-500 bg-gray-100 dark:bg-[#2A2A2A] inline-block px-2 py-1 rounded">📍 ${this.formatCoordinate(pt.lat, pt.lon)}</div>
+                                    <div class="text-[11px] font-mono text-gray-500 bg-gray-100 dark:bg-[#2A2A2A] inline-block px-2 py-1 rounded border border-gray-200 dark:border-[#444]">📍 ${this.formatCoordinate(pt.lat, pt.lon)}</div>
                                 </td>`;
                             }
 
-                            let windDisplay = `${f.wind} kt`;
+                            let windDisplay = `${f.wind} kts`;
                             if (f.gust > f.wind + 2) windDisplay += ` <span class="text-xs text-danger font-bold ml-1">(Gusts ${f.gust})</span>`;
                             let waveStyle = f.wave > 3 ? 'text-danger font-bold' : '';
 
@@ -690,8 +837,7 @@
                 let html = `
                     <div class="mb-3 flex justify-between items-end">
                         <div>
-                            <div class="text-xs uppercase tracking-wider text-ocean font-bold mb-1">${pt.label} Waypoint</div>
-                            <div class="text-xs font-mono text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-[#2A2A2A] inline-block px-2 py-1 rounded border border-gray-200 dark:border-[#444]">📍 ${this.formatCoordinate(pt.lat, pt.lon)}</div>
+                            <div class="text-xs font-mono text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-[#2A2A2A] inline-block px-2 py-1 rounded border border-gray-200 dark:border-[#444]">📍 Coordinates: ${this.formatCoordinate(pt.lat, pt.lon)}</div>
                         </div>
                     </div>
                     <div class="overflow-x-auto">
@@ -702,7 +848,7 @@
                             <tbody class="divide-y divide-gray-100 dark:divide-[#333] text-gray-800 dark:text-gray-200">
                 `;
                 pt.forecasts.forEach(f => {
-                    let windDisplay = `${f.wind} kt`;
+                    let windDisplay = `${f.wind} kts`;
                     if (f.gust > f.wind + 2) windDisplay += `<br><span class="text-xs text-danger font-bold">(Gusts ${f.gust})</span>`;
                     let waveStyle = f.wave > 3 ? 'text-danger font-bold' : '';
                     html += `
@@ -710,7 +856,7 @@
                             <td class="px-3 py-2"><span class="font-bold block">${f.timeLabel}</span><span class="text-[10px] text-gray-500">${f.actualTime}</span></td>
                             <td class="px-3 py-2">${windDisplay}</td>
                             <td class="px-3 py-2 ${waveStyle}">${f.wave}m</td>
-                            <td class="px-3 py-2">${f.pressure}</td>
+                            <td class="px-3 py-2">${f.pressure} hPa</td>
                         </tr>
                     `;
                 });
