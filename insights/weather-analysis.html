@@ -80,7 +80,7 @@
         .dark .leaflet-tooltip-left:before { border-left-color: rgba(30, 30, 30, 0.95); }
         .dark .leaflet-tooltip-right:before { border-right-color: rgba(30, 30, 30, 0.95); }
 
-        /* Print Logic: Map Only Mode */
+        /* Unified Print Logic */
         @media print {
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             body { background: white !important; color: black !important; padding-bottom: 0 !important; }
@@ -102,12 +102,27 @@
             @page { margin: 1cm; size: landscape; }
         }
 
-        /* Specifically isolates map for "Print Map Only" function */
-        .print-map-only-mode body * { visibility: hidden; }
-        .print-map-only-mode #map-section, .print-map-only-mode #map-section * { visibility: visible; }
-        .print-map-only-mode #map-section { position: absolute; left: 0; top: 0; width: 100%; height: 100%; margin: 0; border: none !important; }
-        .print-map-only-mode #map-container { height: 90vh !important; }
-        .print-map-only-mode #print-header-top { visibility: visible; position: absolute; top: 0; left: 0; width: 100%; z-index: 10000; }
+        /* Highly Specific Logic for "Print Map Only" */
+        @media print {
+            .print-map-only-mode body * { visibility: hidden !important; }
+            .print-map-only-mode #map-section, 
+            .print-map-only-mode #map-section *, 
+            .print-map-only-mode .leaflet-control-container * { visibility: visible !important; }
+            
+            .print-map-only-mode #map-section { 
+                position: absolute !important; left: 0 !important; top: 0 !important; 
+                width: 100vw !important; height: 98vh !important; 
+                margin: 0 !important; padding: 0 !important; border: none !important;
+            }
+            .print-map-only-mode #map-container { 
+                height: 100% !important; width: 100% !important; border: none !important;
+            }
+            .print-map-only-mode #print-header-top { 
+                visibility: visible !important; position: absolute !important; 
+                top: 0 !important; left: 0 !important; width: 100% !important; 
+                z-index: 10000 !important; margin-bottom: 0 !important; border-bottom: none !important;
+            }
+        }
     </style>
 </head>
 <body class="antialiased selection:bg-ocean selection:text-white pb-12 transition-colors duration-300 bg-[#F9F8F6]">
@@ -419,7 +434,7 @@
             routePoints: [],
             viewMode: 'tabs',
             activeTab: 0,
-            timeMode: 'local', // 'local' or 'utc'
+            timeMode: 'local',
             
             windChartInst: null, waveChartInst: null, pressureChartInst: null,
             chartData: { labels: [], locations: [], rawTimes: [], hrOffsets: [], wind: [], gusts: [], wave: [], pressure: [] },
@@ -445,7 +460,6 @@
                     btnLocal.className = "px-3 py-1 rounded-md text-gray-500 dark:text-gray-400 bg-transparent shadow-none transition-colors";
                 }
 
-                // Hot refresh data views to apply new time formatting
                 if (this.routePoints.length > 0 && this.routePoints[0].forecasts) {
                     this.updateTooltips();
                     this.buildWaypointsUI();
@@ -453,7 +467,6 @@
                 }
             },
 
-            // Universal DateTime Formatter
             formatDateTime: function(ms) {
                 const isUtc = this.timeMode === 'utc';
                 const d = new Date(ms);
@@ -598,10 +611,14 @@
 
             fetchAndUpdate: async function() {
                 const speed = parseFloat(document.getElementById('vessel-speed').value);
-                const depTimeStr = document.getElementById('route-departure').value;
+                const depTimeStr = document.getElementById('route-departure').value; // e.g. "2024-05-28T14:30"
                 if (isNaN(speed) || speed <= 0 || !depTimeStr) return;
                 
-                const startTimeMs = new Date(depTimeStr).getTime();
+                // CRITICAL FIX FOR iOS Safari: Safely parse standard HTML datetime string
+                let safeDepTime = depTimeStr.replace('T', ' ');
+                if (safeDepTime.length === 16) safeDepTime += ":00";
+                safeDepTime = safeDepTime.replace(/-/g, '/'); // Converts to "YYYY/MM/DD HH:MM:00" format compatible with all iOS
+                const startTimeMs = new Date(safeDepTime).getTime();
 
                 const btn = document.getElementById('btn-calculate');
                 btn.innerHTML = `<span>⏳</span> Processing...`; btn.disabled = true;
@@ -629,7 +646,6 @@
                 this.map.fitBounds(this.routePolyline.getBounds().pad(0.3));
 
                 try {
-                    // Force timezone=GMT to ensure we strictly align with standard Epoch Ms parsing
                     const promises = this.routePoints.map(pt => {
                         const pWeather = fetch(`https://api.open-meteo.com/v1/forecast?latitude=${pt.lat}&longitude=${pt.lon}&hourly=windspeed_10m,windgusts_10m,surface_pressure&windspeed_unit=kn&timezone=GMT`).then(r => r.json());
                         const pMarine = fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=${pt.lat}&longitude=${pt.lon}&hourly=wave_height&timezone=GMT`).then(r => r.json()).catch(() => null); 
@@ -644,15 +660,19 @@
                         pt.forecasts = [0, 12, 24].map(offsetHours => {
                             const targetMs = pt.eta.getTime() + (offsetHours * 3600000);
                             
-                            // Find nearest matching hourly forecast based on absolute Epoch time
                             let minDiff = Infinity; let timeIdx = 0;
                             wData.hourly.time.forEach((tStr, i) => {
-                                const ms = new Date(tStr + "Z").getTime(); // Treat API GMT return as absolute UTC
+                                // CRITICAL FIX FOR iOS Safari: Must include seconds in standard ISO 8601 string parsing
+                                const isoStr = tStr.length === 16 ? tStr + ":00Z" : tStr + "Z";
+                                const ms = new Date(isoStr).getTime();
                                 const diff = Math.abs(ms - targetMs);
                                 if (diff < minDiff) { minDiff = diff; timeIdx = i; }
                             });
 
-                            const msExact = new Date(wData.hourly.time[timeIdx] + "Z").getTime();
+                            const exactTStr = wData.hourly.time[timeIdx];
+                            const exactIso = exactTStr.length === 16 ? exactTStr + ":00Z" : exactTStr + "Z";
+                            const msExact = new Date(exactIso).getTime();
+                            
                             const waveVal = (mData && mData.hourly && mData.hourly.wave_height && mData.hourly.wave_height[timeIdx]) ? mData.hourly.wave_height[timeIdx] : 0;
                             
                             return {
@@ -730,12 +750,16 @@
                     
                     let minDiff = Infinity; let timeIdx = 0;
                     wData.hourly.time.forEach((tStr, i) => {
-                        const ms = new Date(tStr + "Z").getTime();
+                        const isoStr = tStr.length === 16 ? tStr + ":00Z" : tStr + "Z";
+                        const ms = new Date(isoStr).getTime();
                         const diff = Math.abs(ms - targetMs);
                         if (diff < minDiff) { minDiff = diff; timeIdx = i; }
                     });
 
-                    const msExact = new Date(wData.hourly.time[timeIdx] + "Z").getTime();
+                    const exactTStr = wData.hourly.time[timeIdx];
+                    const exactIso = exactTStr.length === 16 ? exactTStr + ":00Z" : exactTStr + "Z";
+                    const msExact = new Date(exactIso).getTime();
+                    
                     const waveVal = (mData && mData.hourly && mData.hourly.wave_height) ? mData.hourly.wave_height[timeIdx] || 0 : 0;
 
                     this.chartData.rawTimes.push(msExact);
@@ -821,14 +845,24 @@
                 if (wasDark) themeManager.setTheme('light');
 
                 document.body.classList.add('print-map-only-mode');
-                this.map.invalidateSize();
                 
-                setTimeout(() => {
-                    window.print();
-                    document.body.classList.remove('print-map-only-mode');
+                // Allow browser to apply CSS and immediately recalculate map boundaries safely
+                requestAnimationFrame(() => {
                     this.map.invalidateSize();
-                    if (wasDark) themeManager.setTheme('dark');
-                }, 500);
+                    this.map.fitBounds(this.routePolyline.getBounds().pad(0.1));
+                    
+                    setTimeout(() => {
+                        window.print();
+                        
+                        // Clean up sequence
+                        document.body.classList.remove('print-map-only-mode');
+                        requestAnimationFrame(() => {
+                            this.map.invalidateSize();
+                            this.map.fitBounds(this.routePolyline.getBounds().pad(0.3));
+                            if (wasDark) themeManager.setTheme('dark');
+                        });
+                    }, 800);
+                });
             },
 
             toggleViewMode: function() {
@@ -959,7 +993,6 @@
             },
 
             updateCharts: function() {
-                // Dynamically update labels based on current Time Mode
                 this.windChartInst.data.labels = this.chartData.rawTimes.map((ms, i) => {
                     return `+${this.chartData.hrOffsets[i]}h ${this.formatDateTime(ms)}`;
                 });
