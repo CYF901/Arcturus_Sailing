@@ -61,7 +61,6 @@
         .wp-mid { background-color: #4B7293; }
         .wp-dest { background-color: #D97736; }
 
-        /* Modified Tooltips: Rectangular, longer pointers */
         .custom-tooltip {
             background-color: rgba(255, 255, 255, 0.95); border: 1px solid #ccc;
             border-radius: 4px; padding: 6px 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
@@ -71,7 +70,6 @@
             background-color: rgba(30, 30, 30, 0.95); border: 1px solid #555; color: #E0E0E0;
         }
         
-        /* Lengthened tooltip pointers */
         .leaflet-tooltip-top:before { border-top-color: rgba(255, 255, 255, 0.95); margin-bottom: -15px; }
         .leaflet-tooltip-bottom:before { border-bottom-color: rgba(255, 255, 255, 0.95); margin-top: -15px; }
         .leaflet-tooltip-left:before { border-left-color: rgba(255, 255, 255, 0.95); margin-right: -15px; }
@@ -82,7 +80,7 @@
         .dark .leaflet-tooltip-left:before { border-left-color: rgba(30, 30, 30, 0.95); }
         .dark .leaflet-tooltip-right:before { border-right-color: rgba(30, 30, 30, 0.95); }
 
-        /* Strict B&W Print Specific Styling */
+        /* Print Logic: Map Only Mode */
         @media print {
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             body { background: white !important; color: black !important; padding-bottom: 0 !important; }
@@ -103,6 +101,13 @@
             .print-header { display: block !important; margin-bottom: 1rem; font-weight: bold; font-size: 1.2rem; border-bottom: 2px solid #000; padding-bottom: 0.5rem; }
             @page { margin: 1cm; size: landscape; }
         }
+
+        /* Specifically isolates map for "Print Map Only" function */
+        .print-map-only-mode body * { visibility: hidden; }
+        .print-map-only-mode #map-section, .print-map-only-mode #map-section * { visibility: visible; }
+        .print-map-only-mode #map-section { position: absolute; left: 0; top: 0; width: 100%; height: 100%; margin: 0; border: none !important; }
+        .print-map-only-mode #map-container { height: 90vh !important; }
+        .print-map-only-mode #print-header-top { visibility: visible; position: absolute; top: 0; left: 0; width: 100%; z-index: 10000; }
     </style>
 </head>
 <body class="antialiased selection:bg-ocean selection:text-white pb-12 transition-colors duration-300 bg-[#F9F8F6]">
@@ -126,6 +131,13 @@
                 <h1 class="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Expedition <span class="text-ocean dark:text-blue-400">WeatherNav</span></h1>
             </div>
             <div class="flex items-center gap-4">
+                <!-- Time Toggle -->
+                <div class="bg-gray-100 dark:bg-[#2A2A2A] rounded-lg p-1 flex text-sm mr-2 border border-gray-200 dark:border-[#444]">
+                    <button onclick="app.setTimeMode('local')" id="btn-time-local" class="px-3 py-1 rounded-md bg-white shadow-sm text-ocean font-bold dark:bg-[#444] dark:text-white transition-colors">Local Time</button>
+                    <button onclick="app.setTimeMode('utc')" id="btn-time-utc" class="px-3 py-1 rounded-md text-gray-500 dark:text-gray-400 bg-transparent shadow-none transition-colors">UTC</button>
+                </div>
+
+                <!-- Theme Toggle -->
                 <div class="bg-gray-100 dark:bg-[#2A2A2A] rounded-lg p-1 flex text-sm">
                     <button onclick="themeManager.setTheme('light')" id="btn-light" class="px-3 py-1 rounded-md bg-white shadow-sm dark:bg-transparent dark:shadow-none dark:text-gray-400">☀️ Day</button>
                     <button onclick="themeManager.setTheme('dark')" id="btn-dark" class="px-3 py-1 rounded-md text-gray-500 dark:text-white dark:bg-[#444] dark:shadow-sm">🌙 Dark</button>
@@ -194,10 +206,17 @@
             <div id="route-summary" class="mt-4 text-sm font-medium text-gray-700 dark:text-gray-300 hidden"></div>
         </section>
 
-        <section class="card">
-            <div class="flex justify-between items-center mb-1">
+        <section id="map-section" class="card">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 gap-2">
                 <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">🗺️ Tactical Route Map</h3>
+                <div class="flex gap-2 no-print">
+                    <button onclick="app.printMapOnly()" class="px-3 py-1 bg-gray-800 hover:bg-black text-white rounded text-sm transition-colors shadow flex items-center gap-1">
+                        🖨️ Print Map Only
+                    </button>
+                </div>
+                <span class="text-sm font-bold text-ocean hidden print:block border px-2 rounded">Expedition WeatherNav Map Report</span>
             </div>
+            
             <div class="mb-4 bg-green-50 dark:bg-green-900/20 p-3 rounded border border-green-200 dark:border-green-800 flex items-start gap-3 no-print">
                 <span class="text-xl">💡</span>
                 <p class="text-sm text-gray-700 dark:text-gray-300">
@@ -351,7 +370,6 @@
 
     </main>
 
-    <!-- Footer added -->
     <footer class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 py-6 border-t border-gray-200 dark:border-[#444] text-center text-sm text-gray-500 dark:text-gray-400 no-print">
         <p>&copy; 2026 Arcturus Sailing Team. All Rights Reserved.</p>
         <p class="mt-1 text-xs">Weather data generated is for informational purposes only and must not be solely relied upon for critical navigation decisions.</p>
@@ -401,15 +419,53 @@
             routePoints: [],
             viewMode: 'tabs',
             activeTab: 0,
+            timeMode: 'local', // 'local' or 'utc'
             
             windChartInst: null, waveChartInst: null, pressureChartInst: null,
-            chartData: { labels: [], locations: [], wind: [], gusts: [], wave: [], pressure: [] },
+            chartData: { labels: [], locations: [], rawTimes: [], hrOffsets: [], wind: [], gusts: [], wave: [], pressure: [] },
 
             init: function() {
                 themeManager.init();
                 this.setDefaultDepartureTime();
                 this.initMap();
                 setTimeout(() => { this.handleNewRoute(); }, 300);
+            },
+
+            setTimeMode: function(mode) {
+                this.timeMode = mode;
+                
+                const btnLocal = document.getElementById('btn-time-local');
+                const btnUtc = document.getElementById('btn-time-utc');
+                
+                if (mode === 'local') {
+                    btnLocal.className = "px-3 py-1 rounded-md bg-white shadow-sm text-ocean font-bold dark:bg-[#444] dark:text-white transition-colors";
+                    btnUtc.className = "px-3 py-1 rounded-md text-gray-500 dark:text-gray-400 bg-transparent shadow-none transition-colors";
+                } else {
+                    btnUtc.className = "px-3 py-1 rounded-md bg-white shadow-sm text-ocean font-bold dark:bg-[#444] dark:text-white transition-colors";
+                    btnLocal.className = "px-3 py-1 rounded-md text-gray-500 dark:text-gray-400 bg-transparent shadow-none transition-colors";
+                }
+
+                // Hot refresh data views to apply new time formatting
+                if (this.routePoints.length > 0 && this.routePoints[0].forecasts) {
+                    this.updateTooltips();
+                    this.buildWaypointsUI();
+                    if(this.windChartInst) this.updateCharts();
+                }
+            },
+
+            // Universal DateTime Formatter
+            formatDateTime: function(ms) {
+                const isUtc = this.timeMode === 'utc';
+                const d = new Date(ms);
+                const day = isUtc ? d.getUTCDate() : d.getDate();
+                const month = (isUtc ? d.getUTCMonth() : d.getMonth()) + 1;
+                const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                const dayStr = days[isUtc ? d.getUTCDay() : d.getDay()];
+                const hrs = (isUtc ? d.getUTCHours() : d.getHours()).toString().padStart(2, '0');
+                const mins = (isUtc ? d.getUTCMinutes() : d.getMinutes()).toString().padStart(2, '0');
+                const tz = isUtc ? 'UTC' : 'Local';
+                
+                return `${day}/${month}, ${dayStr} ${hrs}${mins} ${tz}`;
             },
 
             setDefaultDepartureTime: function() {
@@ -473,14 +529,13 @@
                     lon: sLon + (dLon - sLon) * f,
                     label: index === 0 ? "Start" : index === 5 ? "Dest" : `${f*100}%`,
                     index: index,
-                    tooltipDir: index % 2 === 0 ? 'top' : 'bottom' // Initial alternating direction
+                    tooltipDir: index % 2 === 0 ? 'top' : 'bottom'
                 }));
 
                 this.rebuildMarkers();
                 this.fetchAndUpdate();
             },
 
-            // Helper to get offset based on direction for longer pointers
             getTooltipOffset: function(dir) {
                 if(dir === 'top') return [0, -20];
                 if(dir === 'bottom') return [0, 20];
@@ -501,14 +556,13 @@
 
                     const marker = L.marker([pt.lat, pt.lon], { icon: icon, draggable: true }).addTo(this.markersLayer);
                     
-                    const initHtml = `<div class="text-left leading-tight"><strong class="text-ocean text-xs">${pt.label}</strong><br><span class="text-[9px] text-gray-500">Calculating...</span></div>`;
+                    const initHtml = `<div class="text-left text-sm text-gray-800 dark:text-gray-200"><strong>${pt.label}</strong><br><span class="text-[9px] text-gray-500">Calculating...</span></div>`;
                     marker.bindTooltip(initHtml, { 
                         direction: pt.tooltipDir, 
                         offset: this.getTooltipOffset(pt.tooltipDir), 
                         className: 'custom-tooltip', permanent: true, opacity: 0.95 
                     });
                     
-                    // Click to cycle tooltip direction
                     marker.on('click', () => {
                         const dirs = ['top', 'right', 'bottom', 'left'];
                         let currentIdx = dirs.indexOf(pt.tooltipDir);
@@ -534,6 +588,7 @@
                             document.getElementById('dest-lat').value = newPos.lat.toFixed(4);
                             document.getElementById('dest-lon').value = newPos.lng.toFixed(4);
                         }
+
                         this.fetchAndUpdate(); 
                     });
                     
@@ -574,9 +629,10 @@
                 this.map.fitBounds(this.routePolyline.getBounds().pad(0.3));
 
                 try {
+                    // Force timezone=GMT to ensure we strictly align with standard Epoch Ms parsing
                     const promises = this.routePoints.map(pt => {
-                        const pWeather = fetch(`https://api.open-meteo.com/v1/forecast?latitude=${pt.lat}&longitude=${pt.lon}&hourly=windspeed_10m,windgusts_10m,surface_pressure&windspeed_unit=kn`).then(r => r.json());
-                        const pMarine = fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=${pt.lat}&longitude=${pt.lon}&hourly=wave_height`).then(r => r.json()).catch(() => null); 
+                        const pWeather = fetch(`https://api.open-meteo.com/v1/forecast?latitude=${pt.lat}&longitude=${pt.lon}&hourly=windspeed_10m,windgusts_10m,surface_pressure&windspeed_unit=kn&timezone=GMT`).then(r => r.json());
+                        const pMarine = fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=${pt.lat}&longitude=${pt.lon}&hourly=wave_height&timezone=GMT`).then(r => r.json()).catch(() => null); 
                         return Promise.all([pWeather, pMarine]);
                     });
                     
@@ -584,44 +640,35 @@
 
                     this.routePoints.forEach((pt, idx) => {
                         const [wData, mData] = results[idx];
-                        const etaIso = pt.eta.toISOString().slice(0, 13) + ":00";
-                        let timeIdx = wData.hourly.time.findIndex(t => t.startsWith(etaIso));
-                        if(timeIdx === -1) timeIdx = 0;
-
+                        
                         pt.forecasts = [0, 12, 24].map(offsetHours => {
-                            const i = Math.min(timeIdx + offsetHours, wData.hourly.time.length - 1);
-                            const waveVal = (mData && mData.hourly && mData.hourly.wave_height && mData.hourly.wave_height[i]) ? mData.hourly.wave_height[i] : 0;
+                            const targetMs = pt.eta.getTime() + (offsetHours * 3600000);
+                            
+                            // Find nearest matching hourly forecast based on absolute Epoch time
+                            let minDiff = Infinity; let timeIdx = 0;
+                            wData.hourly.time.forEach((tStr, i) => {
+                                const ms = new Date(tStr + "Z").getTime(); // Treat API GMT return as absolute UTC
+                                const diff = Math.abs(ms - targetMs);
+                                if (diff < minDiff) { minDiff = diff; timeIdx = i; }
+                            });
+
+                            const msExact = new Date(wData.hourly.time[timeIdx] + "Z").getTime();
+                            const waveVal = (mData && mData.hourly && mData.hourly.wave_height && mData.hourly.wave_height[timeIdx]) ? mData.hourly.wave_height[timeIdx] : 0;
+                            
                             return {
                                 timeLabel: offsetHours === 0 ? "ETA" : `ETA +${offsetHours}h`,
-                                actualTime: new Date(wData.hourly.time[i]).toLocaleTimeString([], {weekday:'short', hour: '2-digit', minute:'2-digit'}),
-                                wind: Math.round(wData.hourly.windspeed_10m[i] || 0),
-                                gust: Math.round(wData.hourly.windgusts_10m[i] || 0),
+                                timeMs: msExact,
+                                wind: Math.round(wData.hourly.windspeed_10m[timeIdx] || 0),
+                                gust: Math.round(wData.hourly.windgusts_10m[timeIdx] || 0),
                                 wave: waveVal.toFixed(1),
-                                pressure: Math.round(wData.hourly.surface_pressure[i] || 1013)
+                                pressure: Math.round(wData.hourly.surface_pressure[timeIdx] || 1013)
                             };
-                        });
-
-                        // Strict 3-line Tooltip Layout
-                        const f0 = pt.forecasts[0];
-                        const gustAlert = f0.gust > f0.wind + 2 ? `<span class="text-danger font-bold ml-1">(Gusts ${f0.gust})</span>` : '';
-                        
-                        pt.tooltipContent = `
-                            <div class="text-left leading-tight whitespace-nowrap">
-                                <strong class="text-ocean text-xs">${pt.label}</strong> <span class="text-[9px] text-gray-500">${this.formatCoordinate(pt.lat, pt.lon)}</span><br>
-                                <span class="text-[10px] font-bold text-gray-700 dark:text-gray-200">ETA: ${f0.actualTime}</span><br>
-                                <span class="text-[11px] text-gray-800 dark:text-gray-100">🌬️ ${f0.wind}kts ${gustAlert} | 〰️ ${f0.wave}m</span>
-                            </div>
-                        `;
-                        
-                        pt.marker.unbindTooltip();
-                        pt.marker.bindTooltip(pt.tooltipContent, {
-                            direction: pt.tooltipDir, offset: this.getTooltipOffset(pt.tooltipDir),
-                            className: 'custom-tooltip', permanent: true, opacity: 0.95
                         });
                     });
 
                     this.generateRollingChartData(results, startTimeMs, totalHours);
                     this.updateKPIs();
+                    this.updateTooltips();
                     this.buildWaypointsUI();
                     if(!this.windChartInst) this.initCharts(); else this.updateCharts();
 
@@ -636,34 +683,63 @@
                 }
             },
 
+            updateTooltips: function() {
+                this.routePoints.forEach((pt) => {
+                    if (!pt.forecasts) return;
+                    
+                    const f0 = pt.forecasts[0];
+                    const gustAlert = f0.gust > f0.wind + 2 ? `<span class="text-danger font-bold ml-1">(Gusts ${f0.gust})</span>` : '';
+                    const timeStr = this.formatDateTime(f0.timeMs);
+                    
+                    pt.tooltipContent = `
+                        <div class="text-left leading-tight whitespace-nowrap">
+                            <strong class="text-ocean text-xs">${pt.label}</strong> <span class="text-[9px] text-gray-500">${this.formatCoordinate(pt.lat, pt.lon)}</span><br>
+                            <span class="text-[10px] font-bold text-gray-700 dark:text-gray-200">ETA: ${timeStr}</span><br>
+                            <span class="text-[11px] text-gray-800 dark:text-gray-100">🌬️ ${f0.wind} kts ${gustAlert} | 〰️ ${f0.wave}m</span>
+                        </div>
+                    `;
+                    
+                    pt.marker.unbindTooltip();
+                    pt.marker.bindTooltip(pt.tooltipContent, {
+                        direction: pt.tooltipDir, offset: this.getTooltipOffset(pt.tooltipDir),
+                        className: 'custom-tooltip', permanent: true, opacity: 0.95
+                    });
+                });
+            },
+
             generateRollingChartData: function(results, startTimeMs, totalHours) {
-                this.chartData = { labels: [], locations: [], wind: [], gusts: [], wave: [], pressure: [] };
+                this.chartData = { labels: [], locations: [], rawTimes: [], hrOffsets: [], wind: [], gusts: [], wave: [], pressure: [] };
                 
                 for(let hr=0; hr<=totalHours; hr+=3) {
-                    const tMs = startTimeMs + (hr * 3600000);
-                    const isoStr = new Date(tMs).toISOString().slice(0,13);
+                    const targetMs = startTimeMs + (hr * 3600000);
                     
                     let seg = 0;
                     for(let i=0; i<5; i++) {
-                        if(tMs >= this.routePoints[i].eta.getTime() && tMs <= this.routePoints[i+1].eta.getTime()) { seg = i; break; }
+                        if(targetMs >= this.routePoints[i].eta.getTime() && targetMs <= this.routePoints[i+1].eta.getTime()) { seg = i; break; }
                     }
                     if(hr >= totalHours) seg = 4;
 
                     const pA = this.routePoints[seg], pB = this.routePoints[seg+1];
                     const segDur = pB.eta.getTime() - pA.eta.getTime();
-                    const frac = segDur === 0 ? 0 : (tMs - pA.eta.getTime()) / segDur;
+                    const frac = segDur === 0 ? 0 : (targetMs - pA.eta.getTime()) / segDur;
                     const cLat = pA.lat + frac * (pB.lat - pA.lat);
                     const cLon = pA.lon + frac * (pB.lon - pA.lon);
 
                     const dataIdx = frac < 0.5 ? seg : seg+1;
                     const [wData, mData] = results[dataIdx];
                     
-                    let timeIdx = wData.hourly.time.findIndex(t => t.startsWith(isoStr));
-                    if(timeIdx === -1) timeIdx = 0;
+                    let minDiff = Infinity; let timeIdx = 0;
+                    wData.hourly.time.forEach((tStr, i) => {
+                        const ms = new Date(tStr + "Z").getTime();
+                        const diff = Math.abs(ms - targetMs);
+                        if (diff < minDiff) { minDiff = diff; timeIdx = i; }
+                    });
 
+                    const msExact = new Date(wData.hourly.time[timeIdx] + "Z").getTime();
                     const waveVal = (mData && mData.hourly && mData.hourly.wave_height) ? mData.hourly.wave_height[timeIdx] || 0 : 0;
 
-                    this.chartData.labels.push(`+${hr}h`);
+                    this.chartData.rawTimes.push(msExact);
+                    this.chartData.hrOffsets.push(hr);
                     this.chartData.locations.push(this.formatCoordinate(cLat, cLon));
                     this.chartData.wind.push(wData.hourly.windspeed_10m[timeIdx] || null);
                     this.chartData.gusts.push(wData.hourly.windgusts_10m[timeIdx] || null);
@@ -723,7 +799,6 @@
                 if (this.viewMode === 'tabs') this.toggleViewMode();
                 this.map.invalidateSize();
                 
-                // Inject Print Date
                 const now = new Date();
                 const printDateStr = `Report Generated On: ${now.toLocaleDateString()} at ${now.toLocaleTimeString()}`;
                 document.getElementById('print-header-top').innerText = printDateStr;
@@ -733,6 +808,25 @@
                 
                 setTimeout(() => {
                     window.print();
+                    if (wasDark) themeManager.setTheme('dark');
+                }, 500);
+            },
+
+            printMapOnly: function() {
+                const now = new Date();
+                const printDateStr = `Expedition WeatherNav Map | Generated: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
+                document.getElementById('print-header-top').innerText = printDateStr;
+
+                const wasDark = document.documentElement.classList.contains('dark');
+                if (wasDark) themeManager.setTheme('light');
+
+                document.body.classList.add('print-map-only-mode');
+                this.map.invalidateSize();
+                
+                setTimeout(() => {
+                    window.print();
+                    document.body.classList.remove('print-map-only-mode');
+                    this.map.invalidateSize();
                     if (wasDark) themeManager.setTheme('dark');
                 }, 500);
             },
@@ -765,7 +859,6 @@
                 if (this.viewMode === 'tabs') {
                     navContainer.classList.remove('hidden');
                     
-                    // Build tab buttons
                     let tabsHtml = `<div class="flex flex-wrap gap-2" id="waypoint-tabs">`;
                     this.routePoints.forEach((pt, idx) => {
                         const activeClass = idx === this.activeTab ? 'tab-active' : 'tab-inactive hover:text-gray-900 dark:hover:text-white';
@@ -773,15 +866,14 @@
                     });
                     tabsHtml += `</div>`;
 
-                    // Build arrow controls
                     const disablePrev = this.activeTab === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-[#333]';
                     const disableNext = this.activeTab === this.routePoints.length - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-[#333]';
                     
                     let controlsHtml = `
-                        <div class="flex items-center justify-between mt-2 bg-gray-50 dark:bg-[#2A2A2A] rounded p-2 border dark:border-[#444]">
-                            <button onclick="app.prevTab()" class="px-3 py-1 border rounded bg-white dark:bg-[#1E1E1E] dark:border-[#444] ${disablePrev}">⬅️ Prev Waypoint</button>
-                            <span class="font-bold text-ocean uppercase tracking-wider text-sm">Focus: ${this.routePoints[this.activeTab].label}</span>
-                            <button onclick="app.nextTab()" class="px-3 py-1 border rounded bg-white dark:bg-[#1E1E1E] dark:border-[#444] ${disableNext}">Next Waypoint ➡️</button>
+                        <div class="flex items-center justify-between mt-2 bg-gray-50 dark:bg-[#2A2A2A] rounded p-2 border border-gray-200 dark:border-[#444]">
+                            <button onclick="app.prevTab()" class="px-3 py-1 border border-gray-300 rounded bg-white dark:bg-[#1E1E1E] dark:border-[#444] transition-colors ${disablePrev}">⬅️ Prev Waypoint</button>
+                            <span class="font-bold text-ocean uppercase tracking-wider text-sm hidden sm:block">Focus: ${this.routePoints[this.activeTab].label}</span>
+                            <button onclick="app.nextTab()" class="px-3 py-1 border border-gray-300 rounded bg-white dark:bg-[#1E1E1E] dark:border-[#444] transition-colors ${disableNext}">Next Waypoint ➡️</button>
                         </div>
                     `;
                     
@@ -818,9 +910,10 @@
                             let windDisplay = `${f.wind} kts`;
                             if (f.gust > f.wind + 2) windDisplay += ` <span class="text-xs text-danger font-bold ml-1">(Gusts ${f.gust})</span>`;
                             let waveStyle = f.wave > 3 ? 'text-danger font-bold' : '';
+                            const timeStr = this.formatDateTime(f.timeMs);
 
                             html += `
-                                <td class="px-4 py-3"><span class="font-bold">${f.timeLabel}</span> <span class="text-[10px] text-gray-500 ml-2">${f.actualTime}</span></td>
+                                <td class="px-4 py-3"><span class="font-bold">${f.timeLabel}</span> <span class="text-[10px] text-gray-500 ml-2">${timeStr}</span></td>
                                 <td class="px-4 py-3">${windDisplay}</td>
                                 <td class="px-4 py-3 ${waveStyle}">${f.wave}m</td>
                                 <td class="px-4 py-3">${f.pressure} hPa</td>
@@ -843,7 +936,7 @@
                     <div class="overflow-x-auto">
                         <table class="min-w-full text-left text-sm whitespace-nowrap">
                             <thead class="uppercase tracking-wider border-b-2 dark:border-[#444] text-gray-500 dark:text-gray-400 text-xs">
-                                <tr><th class="px-3 py-2">Time</th><th class="px-3 py-2">Wind</th><th class="px-3 py-2">Wave</th><th class="px-3 py-2">Press</th></tr>
+                                <tr><th class="px-3 py-2">Condition Time</th><th class="px-3 py-2">Wind</th><th class="px-3 py-2">Wave</th><th class="px-3 py-2">Press</th></tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100 dark:divide-[#333] text-gray-800 dark:text-gray-200">
                 `;
@@ -851,9 +944,11 @@
                     let windDisplay = `${f.wind} kts`;
                     if (f.gust > f.wind + 2) windDisplay += `<br><span class="text-xs text-danger font-bold">(Gusts ${f.gust})</span>`;
                     let waveStyle = f.wave > 3 ? 'text-danger font-bold' : '';
+                    const timeStr = this.formatDateTime(f.timeMs);
+
                     html += `
                         <tr class="hover:bg-gray-50 dark:hover:bg-[#2A2A2A]">
-                            <td class="px-3 py-2"><span class="font-bold block">${f.timeLabel}</span><span class="text-[10px] text-gray-500">${f.actualTime}</span></td>
+                            <td class="px-3 py-2"><span class="font-bold block">${f.timeLabel}</span><span class="text-[10px] text-gray-500">${timeStr}</span></td>
                             <td class="px-3 py-2">${windDisplay}</td>
                             <td class="px-3 py-2 ${waveStyle}">${f.wave}m</td>
                             <td class="px-3 py-2">${f.pressure} hPa</td>
@@ -861,6 +956,39 @@
                     `;
                 });
                 return html + `</tbody></table></div>`;
+            },
+
+            updateCharts: function() {
+                // Dynamically update labels based on current Time Mode
+                this.windChartInst.data.labels = this.chartData.rawTimes.map((ms, i) => {
+                    return `+${this.chartData.hrOffsets[i]}h ${this.formatDateTime(ms)}`;
+                });
+                this.waveChartInst.data.labels = this.windChartInst.data.labels;
+                this.pressureChartInst.data.labels = this.windChartInst.data.labels;
+
+                this.windChartInst.data.datasets = [
+                    { label: 'Gusts', data: this.chartData.gusts, borderColor: '#D97736', borderDash: [5, 5], tension: 0.4, borderWidth: 2, pointRadius: 0 },
+                    { label: 'Wind', data: this.chartData.wind, borderColor: '#4B7293', backgroundColor: 'rgba(75, 114, 147, 0.1)', fill: true, tension: 0.4, borderWidth: 3 }
+                ];
+                this.windChartInst.update();
+
+                this.waveChartInst.data.datasets = [{
+                    label: 'Wave Height', data: this.chartData.wave, borderRadius: 4,
+                    backgroundColor: this.chartData.wave.map(h => h > 3 ? '#D97736' : '#4A7C59')
+                }];
+                this.waveChartInst.update();
+
+                const isDark = document.documentElement.classList.contains('dark');
+                this.pressureChartInst.data.datasets = [{
+                    label: 'Pressure', data: this.chartData.pressure, borderColor: isDark ? '#E2E8F0' : '#333333', tension: 0.3, borderWidth: 2, pointBackgroundColor: isDark ? '#1E1E1E' : '#FFFFFF'
+                }];
+                
+                const validP = this.chartData.pressure.filter(p => p !== null);
+                if (validP.length) {
+                    this.pressureChartInst.options.scales.y.min = Math.floor(Math.min(...validP)) - 2;
+                    this.pressureChartInst.options.scales.y.max = Math.ceil(Math.max(...validP)) + 2;
+                }
+                this.pressureChartInst.update();
             },
 
             updateChartTheme: function() {
@@ -910,35 +1038,6 @@
                 });
 
                 this.updateCharts();
-            },
-
-            updateCharts: function() {
-                this.windChartInst.data.labels = this.chartData.labels;
-                this.windChartInst.data.datasets = [
-                    { label: 'Gusts', data: this.chartData.gusts, borderColor: '#D97736', borderDash: [5, 5], tension: 0.4, borderWidth: 2, pointRadius: 0 },
-                    { label: 'Wind', data: this.chartData.wind, borderColor: '#4B7293', backgroundColor: 'rgba(75, 114, 147, 0.1)', fill: true, tension: 0.4, borderWidth: 3 }
-                ];
-                this.windChartInst.update();
-
-                this.waveChartInst.data.labels = this.chartData.labels;
-                this.waveChartInst.data.datasets = [{
-                    label: 'Wave Height', data: this.chartData.wave, borderRadius: 4,
-                    backgroundColor: this.chartData.wave.map(h => h > 3 ? '#D97736' : '#4A7C59')
-                }];
-                this.waveChartInst.update();
-
-                this.pressureChartInst.data.labels = this.chartData.labels;
-                const isDark = document.documentElement.classList.contains('dark');
-                this.pressureChartInst.data.datasets = [{
-                    label: 'Pressure', data: this.chartData.pressure, borderColor: isDark ? '#E2E8F0' : '#333333', tension: 0.3, borderWidth: 2, pointBackgroundColor: isDark ? '#1E1E1E' : '#FFFFFF'
-                }];
-                
-                const validP = this.chartData.pressure.filter(p => p !== null);
-                if (validP.length) {
-                    this.pressureChartInst.options.scales.y.min = Math.floor(Math.min(...validP)) - 2;
-                    this.pressureChartInst.options.scales.y.max = Math.ceil(Math.max(...validP)) + 2;
-                }
-                this.pressureChartInst.update();
             }
         };
 
